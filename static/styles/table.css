@@ -1,0 +1,32 @@
+table {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+table, th, td {
+    border: 1px solid darkgoldenrod;
+}
+
+td, img {
+    vertical-align: bottom;
+}
+
+td img {
+    height: 300px;
+}
+
+.caption-bottom {
+    caption-side: bottom;
+}
+
+.color-table tr:nth-child(odd) {
+    background-color: lightyellow;    
+}
+
+.color-table tr:nth-child(even) {
+    background-color: lightpink;
+}
+
+.color-table thead tr {
+    background-color: lightgrey !important;
+}

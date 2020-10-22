@@ -1,0 +1,60 @@
+form {
+    width: 100%;
+    max-width: 300px;
+}
+
+form p {
+    margin: 0;
+    padding: 6px 0 6px 0;
+}
+
+form p label {
+    padding: 6px 3px 6px 3px;
+    display: block;
+    font-size: 16px;
+}
+
+form p input {
+    width: 100%;
+    padding: 4px;
+    display: block;
+    box-sizing: border-box;
+    border: 1px solid #263238;
+    border-radius: 4px;
+}
+
+form p input[type=submit] {
+    max-width: 150px;
+    margin: 12px auto 12px auto;
+    color: #ffffff;
+    background-color: #455a64;
+    transition: opacity ease-out 0.15s;
+}
+
+form p input[type=submit]:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+form p input[type=submit]:disabled {
+    opacity: 0.4;
+}
+
+form p input[type=submit]:disabled:hover {
+    opacity: 0.4;
+    cursor: default;
+}
+
+form p span {
+    padding: 3px;
+    display: block;
+    font-size: 14px;
+}
+
+form p span.status {
+    text-align: center;
+}
+
+form p span.error {
+    color: #d50000;
+}
