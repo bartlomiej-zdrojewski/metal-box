@@ -6,6 +6,7 @@ form {
 form p {
     margin: 0;
     padding: 6px 0 6px 0;
+    text-indent: 0;
 }
 
 form p label {

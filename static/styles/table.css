@@ -3,30 +3,36 @@ table {
     margin-right: auto;
 }
 
-table, th, td {
-    border: 1px solid darkgoldenrod;
+table {
+    border: 1px solid #000000;
 }
 
-td, img {
-    vertical-align: bottom;
+table td {
+    min-width: 120px;
+    padding: 4px;
 }
 
-td img {
-    height: 300px;
+table tr:first-child {
+    text-align: center;
 }
 
-.caption-bottom {
+table.color-table tr:nth-child(even) {
+    background-color: #bbdefb;
+}
+
+table.color-table tr:nth-child(odd) {
+    background-color: #64b5f6;    
+}
+
+table.color-table:hover tr:nth-child(even) {
+    background-color: #b2dfdb;
+}
+
+table.color-table:hover tr:nth-child(odd) {
+    background-color: #4db6ac;    
+}
+
+table.caption-bottom caption {
+    margin: 4px 0 4px 0;
     caption-side: bottom;
-}
-
-.color-table tr:nth-child(odd) {
-    background-color: lightyellow;    
-}
-
-.color-table tr:nth-child(even) {
-    background-color: lightpink;
-}
-
-.color-table thead tr {
-    background-color: lightgrey !important;
 }
