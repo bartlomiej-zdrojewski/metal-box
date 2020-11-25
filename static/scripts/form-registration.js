@@ -1,10 +1,18 @@
 document.addEventListener('DOMContentLoaded', function (event) {
-    const FORM_ID = "form-registration";
+    const FORM_ID = "form_registration";
     const INPUT_LOGIN_ID = "login";
-    const INPUT_PESEL_ID = "pesel";
     const INPUT_PASSWORD_ID = "password";
     const INPUT_PASSWORD_REPEAT_ID = "second_password";
-    const BUTTON_REGISTER_ID = "button-register";
+    const INPUT_NAME_ID = "name";
+    const INPUT_SURNAME_ID = "surname";
+    const INPUT_BIRTHDATE_ID = "birthdate";
+    const INPUT_PESEL_ID = "pesel";
+    const INPUT_STREET_ID = "street";
+    const INPUT_APARTMENT_NUMBER_ID = "apartment_number";
+    const INPUT_CITY_ID = "city";
+    const INPUT_POSTAL_CODE_ID = "postal_code";
+    const INPUT_COUNTRY_ID = "country";
+    const BUTTON_REGISTER_ID = "button_register";
 
     const GET = "GET";
     const POST = "POST";
@@ -13,11 +21,14 @@ document.addEventListener('DOMContentLoaded', function (event) {
         CREATED: 201,
         NOT_FOUND: 404
     };
-    const API_URL = "https://pamiw2020registration.herokuapp.com/";
+    const API_URL = "https://localhost:8080/api";
 
-    const loginPattern = new RegExp("^[a-zA-Z]+$");
-    const passwordPattern = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*])(.*)$");
-    const peselPattern = new RegExp("^[0-9]+$");
+    const loginPattern = new RegExp(/^[a-zA-Z]+$/);
+    const passwordPattern = new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*])(.*)$/);
+    const birthdatePattern = new RegExp(/^\d{4}-\d{2}-\d{2}$/);
+    const peselPattern = new RegExp(/^[0-9]+$/);
+    const postalCodePattern = new RegExp(/^\d{2}-\d{3}$/);
+    const onEmptyError = "Pole nie może pozostać puste.";
 
     let form = document.getElementById(FORM_ID);
     let isLoginValid = false;
@@ -27,9 +38,17 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     [
         INPUT_LOGIN_ID,
-        INPUT_PESEL_ID,
         INPUT_PASSWORD_ID,
-        INPUT_PASSWORD_REPEAT_ID
+        INPUT_PASSWORD_REPEAT_ID,
+        INPUT_NAME_ID,
+        INPUT_SURNAME_ID,
+        INPUT_BIRTHDATE_ID,
+        INPUT_PESEL_ID,
+        INPUT_STREET_ID,
+        INPUT_APARTMENT_NUMBER_ID,
+        INPUT_CITY_ID,
+        INPUT_POSTAL_CODE_ID,
+        INPUT_COUNTRY_ID
     ].forEach(id => setInputValidation(id));
 
     validateForm();
@@ -137,44 +156,148 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     function validateForm() {
         let isFormValid = true;
-        let isPeselValid = validatePesel();
-        let isPasswordValid = validatePassword();
-        let isPasswordRepeatValid = validatePasswordRepeat();
+        const isPasswordRepeatValid = validatePasswordRepeat();
+        const isPasswordValid = validatePassword(isLoginValid || isPasswordRepeatValid);
+        const isPeselValid = validatePesel();
+        const isBithdateValid = validateBirthdate(isPeselValid);
+        const isSurnameValid = validateInputNotEmpty(INPUT_SURNAME_ID, isPeselValid || isBithdateValid);
+        const isNameValid = validateInputNotEmpty(INPUT_NAME_ID, isPeselValid || isBithdateValid || isSurnameValid);
+        const isCountryValid = validateInputNotEmpty(INPUT_COUNTRY_ID);
+        const isPostalCodeValid = validatePostalCode(isCountryValid);
+        const isCityValid = validateInputNotEmpty(INPUT_CITY_ID, isCountryValid || isPostalCodeValid);
+        const isApartmentNumberValid = validateInputNotEmpty(INPUT_APARTMENT_NUMBER_ID, isCountryValid || isPostalCodeValid || isCityValid);
+        const isStreetValid = validateInputNotEmpty(INPUT_STREET_ID, isCountryValid || isPostalCodeValid || isCityValid || isApartmentNumberValid);
         isFormValid &&= isLoginValid;
-        isFormValid &&= isPeselValid;
         isFormValid &&= isPasswordValid;
         isFormValid &&= isPasswordRepeatValid;
+        isFormValid &&= isNameValid;
+        isFormValid &&= isSurnameValid;
+        isFormValid &&= isBithdateValid;
+        isFormValid &&= isPeselValid;
+        isFormValid &&= isStreetValid;
+        isFormValid &&= isApartmentNumberValid;
+        isFormValid &&= isCityValid;
+        isFormValid &&= isPostalCodeValid;
+        isFormValid &&= isCountryValid;
         setButtonRegisterEnabled(isFormValid);
         return isFormValid;
     }
 
-    function validateLogin() {
+    function validateInputNotEmpty(id, showOnEmptyError) {
+        setSpan(id);
+        let inputValue = getInputValue(id);
+        if (inputValue == null) {
+            return false;
+        }
+        if (inputValue.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(id, onEmptyError, true);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    function validateLogin(showOnEmptyError) {
         let login = getInputValue(INPUT_LOGIN_ID);
         if (login == null) {
             return false;
         }
         if (login.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(id, onEmptyError, true);
+            }
             return false;
         }
         if (login.length < 5) {
-            setSpan(INPUT_LOGIN_ID, "Login musi składać się z co najmniej 5 znaków.", true)
+            setSpan(INPUT_LOGIN_ID, "Login musi składać się z co najmniej 5 znaków.", true);
             return false;
         }
         if (login.match(loginPattern) == null) {
-            setSpan(INPUT_LOGIN_ID, "Login musi składać się wyłącznie z małych i wielkich liter alfabetu łacińskiego.", true)
+            setSpan(INPUT_LOGIN_ID, "Login musi składać się wyłącznie z małych i wielkich liter alfabetu łacińskiego.", true);
+            return false;
+        }
+        return true;
+    }
+
+    function validatePassword(showOnEmptyError) {
+        setSpan(INPUT_PASSWORD_ID);
+        let password = getInputValue(INPUT_PASSWORD_ID);
+        if (password == null) {
+            return false;
+        }
+        if (password.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(id, onEmptyError, true);
+            }
+            return false;
+        }
+        if (password.length < 8) {
+            setSpan(INPUT_PASSWORD_ID, "Hasło musi składać się z co najmniej 8 znaków.", true);
+            return false;
+        }
+        if (password.match(passwordPattern) == null) {
+            setSpan(INPUT_PASSWORD_ID, "Hasło musi zawierać małą i wielką literę, cyfrę i znak specjalny (!@#$%&*).", true);
+            return false;
+        }
+        return true;
+    }
+
+    function validatePasswordRepeat(showOnEmptyError) {
+        setSpan(INPUT_PASSWORD_REPEAT_ID);
+        let password = getInputValue(INPUT_PASSWORD_ID);
+        let passwordRepeat = getInputValue(INPUT_PASSWORD_REPEAT_ID);
+        if (password == null || passwordRepeat == null) {
+            return false;
+        }
+        if (passwordRepeat.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(id, onEmptyError, true);
+            }
+            return false;
+        }
+        if (password != passwordRepeat) {
+            setSpan(INPUT_PASSWORD_REPEAT_ID, "Powtórzenie hasła nie pasuje do oryginalnego hasła.", true);
+            return false;
+        }
+        return true;
+    }
+
+    function validateBirthdate(showOnEmptyError) {
+        setSpan(INPUT_BIRTHDATE_ID);
+        let birthdate = getInputValue(INPUT_BIRTHDATE_ID);
+        if (birthdate == null) {
+            return false;
+        }
+        if (birthdate.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(INPUT_BIRTHDATE_ID, onEmptyError, true);
+            }
+            return false;
+        }
+        if (birthdate.match(birthdatePattern) == null) {
+            setSpan(INPUT_BIRTHDATE_ID, "Data urodzenia musi być zgodna z formatem YYYY-MM-DD.", true);
+            return false;
+        }
+        date = new Date(birthdate);
+        if (isNaN(date.getTime())) {
+            setSpan(INPUT_BIRTHDATE_ID, "Data urodzenia musi być prawdziwą datą.", true);
             return false;
         }
         return true;
     }
 
     // See https://www.gov.pl/web/gov/czym-jest-numer-pesel
-    function validatePesel() {
+    function validatePesel(showOnEmptyError) {
         setSpan(INPUT_PESEL_ID);
         let pesel = getInputValue(INPUT_PESEL_ID);
         if (pesel == null) {
             return false;
         }
         if (pesel.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(id, onEmptyError, true);
+            }
             return false;
         }
         if (pesel.length != 11) {
@@ -198,38 +321,20 @@ document.addEventListener('DOMContentLoaded', function (event) {
         return true;
     }
 
-    function validatePassword() {
-        setSpan(INPUT_PASSWORD_ID);
-        let password = getInputValue(INPUT_PASSWORD_ID);
-        if (password == null) {
+    function validatePostalCode(showOnEmptyError) {
+        setSpan(INPUT_POSTAL_CODE_ID);
+        let postalCode = getInputValue(INPUT_POSTAL_CODE_ID);
+        if (postalCode == null) {
             return false;
         }
-        if (password.length == 0) {
+        if (postalCode.length == 0) {
+            if (showOnEmptyError === true) {
+                setSpan(INPUT_POSTAL_CODE_ID, onEmptyError, true);
+            }
             return false;
         }
-        if (password.length < 8) {
-            setSpan(INPUT_PASSWORD_ID, "Hasło musi składać się z co najmniej 8 znaków.", true)
-            return false;
-        }
-        if (password.match(passwordPattern) == null) {
-            setSpan(INPUT_PASSWORD_ID, "Hasło musi zawierać małą i wielką literę, cyfrę i znak specjalny (!@#$%&*).", true)
-            return false;
-        }
-        return true;
-    }
-
-    function validatePasswordRepeat() {
-        setSpan(INPUT_PASSWORD_REPEAT_ID);
-        let password = getInputValue(INPUT_PASSWORD_ID);
-        let passwordRepeat = getInputValue(INPUT_PASSWORD_REPEAT_ID);
-        if (password == null || passwordRepeat == null) {
-            return false;
-        }
-        if (passwordRepeat.length == 0) {
-            return false;
-        }
-        if (password != passwordRepeat) {
-            setSpan(INPUT_PASSWORD_REPEAT_ID, "Powtórzenie hasła nie pasuje do oryginalnego hasła.", true)
+        if (postalCode.match(postalCodePattern) == null) {
+            setSpan(INPUT_POSTAL_CODE_ID, "Kod pocztowy musi być zgodny z formatem XX-YYY.", true);
             return false;
         }
         return true;

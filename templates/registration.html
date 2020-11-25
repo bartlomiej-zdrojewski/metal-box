@@ -23,25 +23,72 @@
     </nav>
     <section>
         <h3>Rejestracja</h3>
-        <form id="form-registration">
+        <form id="form_registration">
+            <fieldset>
+                <legend>
+                    Dane konta
+                </legend>
+                <p>
+                    <label for="login">Login</label>
+                    <input id="login" type="text" name="login" />
+                </p>
+                <p>
+                    <label for="password">Hasło</label>
+                    <input id="password" type="password" name="password" />
+                </p>
+                <p>
+                    <label for="second_password">Powtórzenie hasła</label>
+                    <input id="second_password" type="password" name="second_password" />
+                </p>
+            </fieldset>
+            <fieldset>
+                <legend>
+                    Dane osobowe
+                </legend>
+                <p>
+                    <label for="name">Imię</label>
+                    <input id="name" type="text" name="name" />
+                </p>
+                <p>
+                    <label for="surname">Nazwisko</label>
+                    <input id="surname" type="text" name="surname" />
+                </p>
+                <p>
+                    <label for="birthdate">Data urodzenia</label>
+                    <input id="birthdate" type="text" name="birthdate" />
+                </p>
+                <p>
+                    <label for="pesel">PESEL</label>
+                    <input id="pesel" type="text" name="pesel" />
+                </p>
+            </fieldset>
+            <fieldset>
+                <legend>
+                    Adres zamieszkania
+                </legend>
+                <p>
+                    <label for="street">Ulica</label>
+                    <input id="street" type="text" name="street" />
+                </p>
+                <p>
+                    <label for="apartment_number">Numer mieszkania</label>
+                    <input id="apartment_number" type="text" name="apartment_number" />
+                </p>
+                <p>
+                    <label for="city">Miejscowość</label>
+                    <input id="city" type="text" name="city" />
+                </p>
+                <p>
+                    <label for="postal_code">Kod pocztowy</label>
+                    <input id="postal_code" type="text" name="postal_code" />
+                </p>
+                <p>
+                    <label for="country">Kraj</label>
+                    <input id="country" type="text" name="country" />
+                </p>
+            </fieldset>
             <p>
-                <label for="login">Login</label>
-                <input id="login" type="text" name="login" />
-            </p>
-            <p>
-                <label for="pesel">PESEL</label>
-                <input id="pesel" type="text" name="pesel" />
-            </p>
-            <p>
-                <label for="password">Hasło</label>
-                <input id="password" type="password" name="password" />
-            </p>
-            <p>
-                <label for="second_password">Powtórzenie hasła</label>
-                <input id="second_password" type="password" name="second_password" />
-            </p>
-            <p>
-                <input id="button-register" type="submit" value="Zarejestruj się" />
+                <input id="button_register" type="submit" value="Zarejestruj się" />
             </p>
         </form>
     </section>
