@@ -7,7 +7,7 @@ from api import *
 GET = "GET"
 POST = "POST"
 SESSION_ID = "session-id"
-SESSION_EXPIRATION_TIME = 30
+SESSION_EXPIRATION_TIME = 300
 
 app = Flask(__name__, static_url_path="")
 api = Api(SESSION_EXPIRATION_TIME)
@@ -23,20 +23,48 @@ def loginPage():
     return render_template("login.html")
 
 
-@app.route("/registration", methods=[GET])
+@app.route("/register", methods=[GET])
 def registrationPage():
-    return render_template("registration.html")
+    return render_template("register.html")
 
 
-@app.route("/secure", methods=[GET])
-def securePage():
+@app.route("/secure/package/list", methods=[GET])
+def packageListPage():
     session_id = request.cookies.get(SESSION_ID)
     validation_result = api.validateSession(session_id)
     if not validation_result:
-        abort(401, "Unauthorized")
+        abort(401)
     login = validation_result[0]
     expiration_date = validation_result[1]
-    response = make_response(render_template("secure.html"))
+    package_list = api.getUserPackageList(login)
+    response = make_response(render_template(
+        "secure/package-list.html", package_list=package_list))
+    response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
+                        expires=expiration_date, secure=True, httponly=True)
+    return response
+
+
+@app.route("/secure/package/register", methods=[GET])
+def packageRegisterPage():
+    session_id = request.cookies.get(SESSION_ID)
+    validation_result = api.validateSession(session_id)
+    if not validation_result:
+        abort(401)
+    expiration_date = validation_result[1]
+    response = make_response(render_template("secure/package-register.html"))
+    response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
+                        expires=expiration_date, secure=True, httponly=True)
+    return response
+
+
+@app.route("/secure/logout", methods=[GET])
+def logoutPage():
+    session_id = request.cookies.get(SESSION_ID)
+    validation_result = api.validateSession(session_id)
+    if not validation_result:
+        abort(401)
+    expiration_date = validation_result[1]
+    response = make_response(render_template("secure/logout.html"))
     response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
                         expires=expiration_date, secure=True, httponly=True)
     return response
@@ -49,7 +77,7 @@ def loginRequest():
         return jsonify(error_message=request_error), 401
     login = request.form.get("login")
     session_id, expiration_date = api.createSession(login)
-    response = jsonify(redirect_url=url_for("securePage"))
+    response = jsonify(redirect_url=url_for("packageListPage"))
     response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
                         expires=expiration_date, secure=True, httponly=True)
     return response, 200
@@ -85,31 +113,30 @@ def userRequest(login):
         return "Not Found", 404
     return "OK", 200
 
-# TODO error pages
 
-# @app.errorhandler(400)
-# def page_unauthorized(error):
-#    return render_template("errors/400.html", error=error)
-
-
-# @app.errorhandler(401)
-# def page_unauthorized(error):
-#    return render_template("errors/401.html", error=error)
+@app.errorhandler(400)
+def page_unauthorized(error):
+    return render_template("error/400.html", error=error)
 
 
-# @app.errorhandler(403)
-# def page_unauthorized(error):
-#    return render_template("errors/401.html", error=error)
+@app.errorhandler(401)
+def page_unauthorized(error):
+    return render_template("error/401.html", error=error)
 
 
-# @app.errorhandler(404)
-# def page_not_found(error):
-#    return render_template("errors/404.html", error=error)
+@app.errorhandler(403)
+def page_unauthorized(error):
+    return render_template("error/401.html", error=error)
 
 
-# @app.errorhandler(500)
-# def page_not_found(error):
-#    return render_template("errors/500.html", error=error)
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("error/404.html", error=error)
+
+
+@app.errorhandler(500)
+def page_not_found(error):
+    return render_template("error/500.html", error=error)
 
 
 def validateLoginRequest(request):

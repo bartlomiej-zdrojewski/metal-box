@@ -2,12 +2,10 @@
 <html lang="pl">
 
 <head>
-    <title>MetalBox - Rejestracja</title>
+    <title>MetalBox</title>
     <meta charset="utf-8">
     <link rel="icon" type="image/svg" href="/images/logo.svg">
     <link href="/styles/main.css" rel="stylesheet" type="text/css" />
-    <link href="/styles/form.css" rel="stylesheet" type="text/css" />
-    <script src="/scripts/form-login.js"></script>
 </head>
 
 <body>
@@ -23,20 +21,16 @@
         </ul>
     </nav>
     <section>
-        <h3>Logowanie</h3>
-        <form id="form_login">
-            <p>
-                <label for="login">Login</label>
-                <input id="login" type="text" name="login" />
-            </p>
-            <p>
-                <label for="password">Hasło</label>
-                <input id="password" type="password" name="password" />
-            </p>
-            <p>
-                <input id="button_login" type="submit" value="Zaloguj się" />
-            </p>
-        </form>
+        <h3>Wystąpił błąd (400 Bad Request)</h3>
+        <p class="no-horizontal-padding">
+            Wysłane żądanie jest nieprawidłowe.
+        </p>
+        {% if error %}
+            <p class="no-horizontal-padding">Szczegóły błędu: <span class="error">{{error}}</span></p>
+        {% endif %}
+        <p class="no-horizontal-padding">
+            Kliknij <a href="/">tutaj</a>, aby przejść na stronę główną.
+        </p>
     </section>
     <footer>
         <p class="footer-inline left">

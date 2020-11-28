@@ -52,7 +52,7 @@ nav ul li {
 
 nav ul li a {
     height: 100%;
-    min-width: 160px;
+    min-width: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -87,6 +87,20 @@ section p {
 
 section p.justify {
     text-align: justify;
+}
+
+section p.no-horizontal-padding {
+    margin: 0;
+    padding: 6px 0 6px 0;
+    text-indent: 0;
+}
+
+section p span.error {
+    color: #d50000;
+}
+
+section p span.error a {
+    color: #d50000;
 }
 
 footer {

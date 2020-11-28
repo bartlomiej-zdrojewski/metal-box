@@ -85,6 +85,9 @@ class Api:
             return False
         return True
 
+    def getUserPackageList(self, login):
+        return []
+
     def registerUserFromRequest(self, request):
         login = request.form.get("login")
         password = request.form.get("password")
