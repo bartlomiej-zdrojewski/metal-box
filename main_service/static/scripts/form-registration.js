@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     const FORM_ID = "form_registration";
     const INPUT_LOGIN_ID = "login";
     const INPUT_PASSWORD_ID = "password";
-    const INPUT_PASSWORD_REPEAT_ID = "second_password";
+    const INPUT_PASSWORD_REPEAT_ID = "password_repeat";
     const INPUT_NAME_ID = "name";
     const INPUT_SURNAME_ID = "surname";
     const INPUT_BIRTHDATE_ID = "birthdate";
@@ -19,9 +19,10 @@ document.addEventListener('DOMContentLoaded', function (event) {
     const HTTP_STATUS = {
         OK: 200,
         CREATED: 201,
+        BAD_REQUEST: 400,
         NOT_FOUND: 404
     };
-    const API_URL = "https://localhost:8080/api";
+    const API_URL = "/api";
 
     const loginPattern = new RegExp(/^[a-zA-Z]+$/);
     const passwordPattern = new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*])(.*)$/);
@@ -30,11 +31,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
     const postalCodePattern = new RegExp(/^\d{2}-\d{3}$/);
     const onEmptyError = "Pole nie może pozostać puste.";
 
-    let form = document.getElementById(FORM_ID);
     let isLoginValid = false;
     let isRegistering = false;
-
-    form.addEventListener("submit", e => onSubmit(e));
+    let form = document.getElementById(FORM_ID);
 
     [
         INPUT_LOGIN_ID,
@@ -50,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         INPUT_POSTAL_CODE_ID,
         INPUT_COUNTRY_ID
     ].forEach(id => setInputValidation(id));
+    form.addEventListener("submit", e => onSubmit(e));
 
     validateForm();
     setSpan(BUTTON_REGISTER_ID, "Wszystkie pola muszą zostać poprawnie wypełnione.");
@@ -154,10 +154,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
         return true;
     }
 
+    // TODO Fix suspicious delay on autocomplete
     function validateForm() {
         let isFormValid = true;
         const isPasswordRepeatValid = validatePasswordRepeat();
-        const isPasswordValid = validatePassword(isLoginValid || isPasswordRepeatValid);
+        const isPasswordValid = validatePassword(isPasswordRepeatValid);
         const isPeselValid = validatePesel();
         const isBithdateValid = validateBirthdate(isPeselValid);
         const isSurnameValid = validateInputNotEmpty(INPUT_SURNAME_ID, isPeselValid || isBithdateValid);
@@ -205,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
         if (login.length == 0) {
             if (showOnEmptyError === true) {
-                setSpan(id, onEmptyError, true);
+                setSpan(INPUT_LOGIN_ID, onEmptyError, true);
             }
             return false;
         }
@@ -228,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
         if (password.length == 0) {
             if (showOnEmptyError === true) {
-                setSpan(id, onEmptyError, true);
+                setSpan(INPUT_PASSWORD_ID, onEmptyError, true);
             }
             return false;
         }
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
         if (passwordRepeat.length == 0) {
             if (showOnEmptyError === true) {
-                setSpan(id, onEmptyError, true);
+                setSpan(INPUT_PASSWORD_REPEAT_ID, onEmptyError, true);
             }
             return false;
         }
@@ -281,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
         date = new Date(birthdate);
         if (isNaN(date.getTime())) {
-            setSpan(INPUT_BIRTHDATE_ID, "Data urodzenia musi być prawdziwą datą.", true);
+            setSpan(INPUT_BIRTHDATE_ID, "Data urodzenia musi być poprawną datą.", true);
             return false;
         }
         return true;
@@ -296,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
         if (pesel.length == 0) {
             if (showOnEmptyError === true) {
-                setSpan(id, onEmptyError, true);
+                setSpan(INPUT_PESEL_ID, onEmptyError, true);
             }
             return false;
         }
@@ -342,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     function checkLoginAvailability() {
         let login = getInputValue(INPUT_LOGIN_ID);
-        let url = API_URL + "user/" + login;
+        let url = API_URL + "/user/" + login;
 
         return Promise.resolve(fetch(url, { method: GET }).then(response => {
             return response.status;
@@ -367,8 +368,18 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     function getRegistrationResponseData(response) {
         let status = response.status;
-        if (status === HTTP_STATUS.OK || status === HTTP_STATUS.CREATED) {
-            return response.json();
+        if (status === HTTP_STATUS.CREATED) {
+            return Promise.resolve({
+                success: true
+            });
+        }
+        else if (status == HTTP_STATUS.BAD_REQUEST) {
+            return response.json().then((data) => {
+                return {
+                    success: false,
+                    error_message: data.error_message
+                }
+            });
         } else {
             throw "Unexpected registration response status: " + response.status;
         }
@@ -378,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         isRegistering = true;
         setButtonRegisterEnabled(false);
         setSpan(BUTTON_REGISTER_ID, "Rejestrowanie...");
-        let url = API_URL + "register";
+        let url = API_URL + "/register";
         let params = {
             method: POST,
             body: new FormData(form),
@@ -387,12 +398,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
         fetch(url, params)
             .then(response => getRegistrationResponseData(response))
             .then(response => {
-                let status = response.registration_status;
-                if (status !== "OK") {
-                    console.log("Registration errors: " + response.errors);
-                    setSpan(BUTTON_REGISTER_ID, "Rejestracja nie powiodła się z powodu nieprawidłowych danych formularza.", true);
-                } else {
+                if (response.success) {
                     setSpan(BUTTON_REGISTER_ID, "Rejestracja zakończyła się pomyślnie.");
+                } else {
+                    console.log("Registration error: " + response.error_message);
+                    setSpan(BUTTON_REGISTER_ID, "Rejestracja nie powiodła się z powodu nieprawidłowych danych formularza.", true);
                 }
                 isRegistering = false;
                 onLoginChanged();

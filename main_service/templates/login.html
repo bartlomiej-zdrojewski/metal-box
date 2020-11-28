@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <title>MetalBox - Rejestracja</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/svg" href="images/logo.svg">
+    <link href="styles/main.css" rel="stylesheet" type="text/css" />
+    <link href="styles/form.css" rel="stylesheet" type="text/css" />
+    <script src="scripts/form-login.js"></script>
+</head>
+
+<body>
+    <header>
+        <img src="images/logo.svg" alt="Logo" />
+        <h2>MetalBox</h2>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="/">Informacje</a></li>
+            <li><a href="/login">Logowanie</a></li>
+            <li><a href="/registration">Rejestracja</a></li>
+        </ul>
+    </nav>
+    <section>
+        <h3>Logowanie</h3>
+        <form id="form_login">
+            <p>
+                <label for="login">Login</label>
+                <input id="login" type="text" name="login" />
+            </p>
+            <p>
+                <label for="password">Hasło</label>
+                <input id="password" type="password" name="password" />
+            </p>
+            <p>
+                <input id="button_login" type="submit" value="Zaloguj się" />
+            </p>
+        </form>
+    </section>
+    <footer>
+        <p class="footer-inline left">
+            <span>&copy; 2020 Bartłomiej Zdrojewski</span>
+        </p>
+        <p class="footer-inline right">
+            <span>
+                Stworzone przy pomocy
+                <img class="footer-img" src="images/vs-code-logo.svg" alt="VS Code logo" />
+            </span>
+        </p>
+    </footer>
+</body>
+
+</html>

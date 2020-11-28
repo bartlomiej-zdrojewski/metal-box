@@ -3,6 +3,20 @@ form {
     max-width: 360px;
 }
 
+form.wide {
+    max-width: 540px;
+}
+
+form fieldset {
+    margin: 6px 0 12px 0;
+    padding: 0 12px 12px 12px;
+    border: 1px solid #263238;
+}
+
+form fieldset:last-of-type {
+    margin-bottom: 0;
+}
+
 form p {
     margin: 0;
     padding: 6px 0 6px 0;
