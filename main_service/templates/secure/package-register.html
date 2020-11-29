@@ -6,6 +6,8 @@
     <meta charset="utf-8">
     <link rel="icon" type="image/svg" href="/images/logo.svg">
     <link href="/styles/main.css" rel="stylesheet" type="text/css" />
+    <link href="/styles/form.css" rel="stylesheet" type="text/css" />
+    <script src="/scripts/package-register.js"></script>
 </head>
 
 <body>
@@ -22,6 +24,94 @@
     </nav>
     <section>
         <h3>Rejestracja paczek</h3>
+        <form id="form_register" class="wide">
+            <fieldset>
+                <legend>
+                    Dane nadawcy
+                </legend>
+                <p>
+                    <label for="sender_name">Imię</label>
+                    <input id="sender_name" type="text" name="sender_name" />
+                </p>
+                <p>
+                    <label for="sender_surname">Nazwisko</label>
+                    <input id="sender_surname" type="text" name="sender_surname" />
+                </p>
+                <p>
+                    <label for="sender_street">Ulica</label>
+                    <input id="sender_street" type="text" name="sender_street" />
+                </p>
+                <p>
+                    <label for="sender_apartment_number">Numer mieszkania</label>
+                    <input id="sender_apartment_number" type="text" name="sender_apartment_number" />
+                </p>
+                <p>
+                    <label for="sender_city">Miejscowość</label>
+                    <input id="sender_city" type="text" name="sender_city" />
+                </p>
+                <p>
+                    <label for="sender_postal_code">Kod pocztowy</label>
+                    <input id="sender_postal_code" type="text" name="sender_postal_code" />
+                </p>
+                <p>
+                    <label for="sender_country">Kraj</label>
+                    <input id="sender_country" type="text" name="sender_country" />
+                </p>
+                <p>
+                    <label for="sender_phone_number">Numer telefonu</label>
+                    <input id="sender_phone_number" type="text" name="sender_phone_number" />
+                </p>
+            </fieldset>
+            <fieldset>
+                <legend>
+                    Dane odbiorcy
+                </legend>
+                <p>
+                    <label for="receiver_name">Imię</label>
+                    <input id="receiver_name" type="text" name="receiver_name" />
+                </p>
+                <p>
+                    <label for="receiver_surname">Nazwisko</label>
+                    <input id="receiver_surname" type="text" name="receiver_surname" />
+                </p>
+                <p>
+                    <label for="receiver_street">Ulica</label>
+                    <input id="receiver_street" type="text" name="receiver_street" />
+                </p>
+                <p>
+                    <label for="receiver_apartment_number">Numer mieszkania</label>
+                    <input id="receiver_apartment_number" type="text" name="receiver_apartment_number" />
+                </p>
+                <p>
+                    <label for="receiver_city">Miejscowość</label>
+                    <input id="receiver_city" type="text" name="receiver_city" />
+                </p>
+                <p>
+                    <label for="receiver_postal_code">Kod pocztowy</label>
+                    <input id="receiver_postal_code" type="text" name="receiver_postal_code" />
+                </p>
+                <p>
+                    <label for="receiver_country">Kraj</label>
+                    <input id="receiver_country" type="text" name="receiver_country" />
+                </p>
+                <p>
+                    <label for="receiver_phone_number">Numer telefonu</label>
+                    <input id="receiver_phone_number" type="text" name="receiver_phone_number" />
+                </p>
+            </fieldset>
+            <fieldset>
+                <legend>
+                    Dane paczki
+                </legend>
+                <p>
+                    <label for="image">Zdjęcie</label>
+                    <input id="image" type="file" accept=".png,.jpg,.jpeg" name="image" />
+                </p>
+            </fieldset>
+            <p>
+                <input id="button_register" type="submit" value="Zarejestruj paczkę" />
+            </p>
+        </form>
     </section>
     <footer>
         <p class="footer-inline left">

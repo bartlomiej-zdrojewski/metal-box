@@ -28,7 +28,7 @@
                 <tr>
                     <td>Identyfikator</td>
                     <td>Data utworzenia</td>
-                    <td>Dokument</td>
+                    <td>Dokument przewozowy</td>
                 </tr>
                 {% for package in package_list %}
                 <tr>
@@ -39,6 +39,9 @@
                 {% endfor %}
             </tbody>
         </table>
+        <p class="no-horizontal-padding">
+            Łącznie {{package_count}} paczek.
+        </p>
     </section>
     <footer>
         <p class="footer-inline left">

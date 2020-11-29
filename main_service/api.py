@@ -106,7 +106,7 @@ class Api:
                     continue
                 package_list.append({
                     "id": id,
-                    "creation_date": package.creation_date,
+                    "creation_date": package.creation_date,  # TODO better format
                     "document_url": FILES_SERVICE_API_URL + "package/" + id
                 })
         return package_list

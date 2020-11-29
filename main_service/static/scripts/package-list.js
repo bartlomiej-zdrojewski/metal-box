@@ -1,12 +1,17 @@
 function downloadPackageDocument(event) {
+    const GET = "GET";
+
     id = event.target.attributes["document-id"].value
     url = event.target.attributes["document-url"].value
 
+    // TODO error handling
+    // TODO sometimes sends "OPTIONS" instead of "GET" and does not download file
     fetch(url, {
+        method: GET,
         headers: {
-            "Authorization": "Bearer " + document.cookie.replace("jwt-token=", ""),
-            "Content-Type": "application/pdf"
-        }
+            "Authorization": "Bearer " + document.cookie.replace("jwt-token=", "")
+        },
+        redirect: "follow"
     })
         .then(response => response.blob())
         .then(response => {

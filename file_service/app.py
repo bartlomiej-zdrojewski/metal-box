@@ -47,6 +47,7 @@ def validateRegisterRequest(request):
         request.form.get("sender_surname"),
         request.form.get("sender_street"),
         request.form.get("sender_apartment_number"),
+        request.form.get("sender_city"),
         request.form.get("sender_postal_code"),
         request.form.get("sender_country"),
         request.form.get("sender_phone_number"),
@@ -54,21 +55,23 @@ def validateRegisterRequest(request):
         request.form.get("receiver_surname"),
         request.form.get("receiver_street"),
         request.form.get("receiver_apartment_number"),
+        request.form.get("receiver_city"),
         request.form.get("receiver_postal_code"),
         request.form.get("receiver_country"),
         request.form.get("receiver_phone_number"),
         request.files.get("image")]
-    sender_postal_code = fields[4]
-    sender_phone_number = fields[6]
-    receiver_postal_code = fields[11]
-    receiver_phone_number = fields[13]
-    image = fields[14]
+    sender_postal_code = fields[5]
+    sender_phone_number = fields[7]
+    receiver_postal_code = fields[13]
+    receiver_phone_number = fields[15]
+    image = fields[16]
     for field in fields:
         if not field:
             return "No form field can be left empty. Form fields are: sender_name, sender_surname, " \
-                "sender_street, sender_apartment_number, sender_postal_code, sender_country, sender_phone_number, " \
-                "receiver_name, receiver_surname, receiver_street, receiver_apartment_number, receiver_postal_code, " \
-                "receiver_country, receiver_phone_number, image."
+                "sender_street, sender_apartment_number, sender_city, sender_postal_code, sender_country, " \
+                "sender_phone_number, receiver_name, receiver_surname, receiver_street, " \
+                "receiver_apartment_number, receiver_city, receiver_postal_code, receiver_country, " \
+                "receiver_phone_number, image."
     if not re.search("^\d{2}-\d{3}$", sender_postal_code):
         return "Sender's postal code must match the XX-YYY format."
     if not re.search("^\d{9}$", sender_phone_number):

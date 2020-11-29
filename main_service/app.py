@@ -47,7 +47,7 @@ def packageListPage():
     access_token = create_access_token(identity=login)
     package_list = api.getUserPackageList(login)
     response = make_response(render_template(
-        "secure/package-list.html", package_list=package_list))
+        "secure/package-list.html", package_list=package_list, package_count=len(package_list)))
     response.set_cookie(SESSION_ID_KEY, session_id,
                         expires=expiration_date, secure=True, httponly=True)
     response.set_cookie(JWT_TOKEN_KEY, access_token,
