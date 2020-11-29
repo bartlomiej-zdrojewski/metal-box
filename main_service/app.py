@@ -1,16 +1,23 @@
+import os
 import re
 from datetime import datetime, timedelta
 from flask import Flask, request, url_for, abort, jsonify, make_response, render_template
-from flask.helpers import make_response
+from flask_jwt_extended import JWTManager, create_access_token
 from api import *
 
 GET = "GET"
 POST = "POST"
-SESSION_ID = "session-id"
+SESSION_ID_KEY = "session-id"
 SESSION_EXPIRATION_TIME = 300
+JWT_SECRET_KEY = "JWT_SECRET"
+JWT_TOKEN_KEY = "jwt-token"
+JWT_TOKEN_EXPIRATION_TIME = SESSION_EXPIRATION_TIME
 
 app = Flask(__name__, static_url_path="")
+app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_TOKEN_EXPIRATION_TIME
 api = Api(SESSION_EXPIRATION_TIME)
+jwt = JWTManager(app)
 
 
 @app.route("/", methods=[GET])
@@ -28,45 +35,57 @@ def registrationPage():
     return render_template("register.html")
 
 
+# TODO middleware for /secure path
 @app.route("/secure/package/list", methods=[GET])
 def packageListPage():
-    session_id = request.cookies.get(SESSION_ID)
+    session_id = request.cookies.get(SESSION_ID_KEY)
     validation_result = api.validateSession(session_id)
     if not validation_result:
         abort(401)
     login = validation_result[0]
     expiration_date = validation_result[1]
+    access_token = create_access_token(identity=login)
     package_list = api.getUserPackageList(login)
     response = make_response(render_template(
         "secure/package-list.html", package_list=package_list))
-    response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
+    response.set_cookie(SESSION_ID_KEY, session_id,
                         expires=expiration_date, secure=True, httponly=True)
+    response.set_cookie(JWT_TOKEN_KEY, access_token,
+                        expires=expiration_date, secure=True, httponly=False)
     return response
 
 
 @app.route("/secure/package/register", methods=[GET])
 def packageRegisterPage():
-    session_id = request.cookies.get(SESSION_ID)
+    session_id = request.cookies.get(SESSION_ID_KEY)
     validation_result = api.validateSession(session_id)
     if not validation_result:
         abort(401)
+    login = validation_result[0]
     expiration_date = validation_result[1]
+    access_token = create_access_token(identity=login)
     response = make_response(render_template("secure/package-register.html"))
-    response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
+    response.set_cookie(SESSION_ID_KEY, session_id,
                         expires=expiration_date, secure=True, httponly=True)
+    response.set_cookie(JWT_TOKEN_KEY, access_token,
+                        expires=expiration_date, secure=True, httponly=False)
     return response
 
 
 @app.route("/secure/logout", methods=[GET])
 def logoutPage():
-    session_id = request.cookies.get(SESSION_ID)
+    session_id = request.cookies.get(SESSION_ID_KEY)
     validation_result = api.validateSession(session_id)
     if not validation_result:
         abort(401)
+    login = validation_result[0]
     expiration_date = validation_result[1]
+    access_token = create_access_token(identity=login)
     response = make_response(render_template("secure/logout.html"))
-    response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
+    response.set_cookie(SESSION_ID_KEY, session_id,
                         expires=expiration_date, secure=True, httponly=True)
+    response.set_cookie(JWT_TOKEN_KEY, access_token,
+                        expires=expiration_date, secure=True, httponly=False)
     return response
 
 
@@ -77,24 +96,29 @@ def loginRequest():
         return jsonify(error_message=request_error), 401
     login = request.form.get("login")
     session_id, expiration_date = api.createSession(login)
+    access_token = create_access_token(identity=login)
     response = jsonify(redirect_url=url_for("packageListPage"))
-    response.set_cookie(SESSION_ID, session_id, max_age=SESSION_EXPIRATION_TIME,
+    response.set_cookie(SESSION_ID_KEY, session_id,
                         expires=expiration_date, secure=True, httponly=True)
+    response.set_cookie(JWT_TOKEN_KEY, access_token,
+                        expires=expiration_date, secure=True, httponly=False)
     return response, 200
 
 
 @app.route("/api/logout", methods=[GET])
 def logoutRequest():
-    session_id = request.cookies.get(SESSION_ID)
+    session_id = request.cookies.get(SESSION_ID_KEY)
     if not session_id:
         return jsonify(error_message="Session id must not be empty."), 400
     if not api.validateSession(session_id):
         return jsonify(error_message="Invalid session."), 400
     if not api.destroySession(session_id):
-        abort(500, "Failed to destroy session (id: {}).".format(session_id))
+        return jsonify(error_message="Failed to destroy session (id: {}).".format(session_id)), 500
     response = jsonify(redirect_url=url_for("loginPage"))
-    response.set_cookie(SESSION_ID, "", max_age=0,
-                        expires=0, secure=True, httponly=True)
+    response.set_cookie(SESSION_ID_KEY, "", expires=0,
+                        secure=True, httponly=True)
+    response.set_cookie(JWT_TOKEN_KEY, "", expires=0,
+                        secure=True, httponly=False)
     return response, 200
 
 
@@ -175,8 +199,8 @@ def validateRegisterRequest(request):
     postal_code = fields[10]
     for field in fields:
         if not field:
-            return "No form field can be left empty. Form fields are: login, password, password_repeat, name, surname, birthdate, " \
-                "pesel, street, apartment_number, city, postal_code, country."
+            return "No form field can be left empty. Form fields are: login, password, password_repeat, \
+                name, surname, birthdate, pesel, street, apartment_number, city, postal_code, country."
     if api.doesUserExist(login):
         return "User already exists (login: {}).".format(login)
     if len(login) < 5:

@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         return true;
     }
 
-    // TODO Fix suspicious delay on autocomplete
+    // TODO fix suspicious delay on autocomplete
     function validateForm() {
         let isFormValid = true;
         const isPasswordRepeatValid = validatePasswordRepeat();

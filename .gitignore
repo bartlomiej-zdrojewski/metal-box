@@ -1,1 +1,5 @@
 **/__pycache__
+file_service/files/documents/*
+!file_service/files/documents/*.empty
+file_service/files/images/*
+!file_service/files/images/*.empty

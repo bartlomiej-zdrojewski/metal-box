@@ -11,8 +11,11 @@ from model.user import *
 
 SALT = "salt"
 USER_PREFIX = "user_"
+PACKAGE_PREFIX = "package_"
 SESSION_ID_TO_LOGIN_MAP = "session_id_to_login_map"
 SESSION_ID_TO_EXPIRATION_DATE_MAP = "session_id_to_expiration_date_map"
+PACKAGE_ID_TO_USER_LOGIN_MAP = "package_id_to_user_login_map"
+FILES_SERVICE_API_URL = "https://localhost:8081/api/"
 
 
 class Api:
@@ -32,7 +35,7 @@ class Api:
         if not self.doesUserExist(login):
             raise Exception(
                 "Could not create session. User does not exist (login: {}).".format(login))
-        session_id = str(uuid.uuid4())
+        session_id = str(uuid.uuid4()).replace("-", "")
         expiration_date = datetime.utcnow() + timedelta(seconds=self.session_expiration_time)
         self.db.hset(SESSION_ID_TO_LOGIN_MAP, session_id, login)
         self.db.hset(SESSION_ID_TO_EXPIRATION_DATE_MAP,
