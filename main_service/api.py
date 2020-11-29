@@ -8,6 +8,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Hash import SHA256
 from model.user import *
+from model.package import *
 
 SALT = "salt"
 USER_PREFIX = "user_"
@@ -89,7 +90,26 @@ class Api:
         return True
 
     def getUserPackageList(self, login):
-        return []
+        if not self.doesUserExist(login):
+            raise Exception(
+                "Could not get package list. User does not exists (login: {}).".format(login))
+        package_list = []
+        for id in self.db.hkeys(PACKAGE_ID_TO_USER_LOGIN_MAP):
+            if login == self.db.hget(PACKAGE_ID_TO_USER_LOGIN_MAP, id):
+                if not self.db.exists(PACKAGE_PREFIX + id):
+                    continue
+                package_data = self.db.get(PACKAGE_PREFIX + id)
+                # TODO delete try except block
+                try:
+                    package = Package.loadFromJson(json.loads(package_data))
+                except:
+                    continue
+                package_list.append({
+                    "id": id,
+                    "creation_date": package.creation_date,
+                    "document_url": FILES_SERVICE_API_URL + "package/" + id
+                })
+        return package_list
 
     def registerUserFromRequest(self, request):
         login = request.form.get("login")

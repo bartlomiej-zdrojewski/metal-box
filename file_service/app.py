@@ -3,6 +3,7 @@ import re
 import redis
 from flask import Flask, request, jsonify, send_file
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
+from flask_cors import CORS
 from api import *
 
 GET = "GET"
@@ -13,6 +14,7 @@ app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
 api = Api()
 jwt = JWTManager(app)
+CORS(app)
 
 
 @app.route("/api/package/<id>",  methods=[GET])

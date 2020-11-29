@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <link rel="icon" type="image/svg" href="/images/logo.svg">
     <link href="/styles/main.css" rel="stylesheet" type="text/css" />
+    <script src="/scripts/package-list.js"></script>
 </head>
 
 <body>
@@ -22,6 +23,22 @@
     </nav>
     <section>
         <h3>Lista paczek</h3>
+        <table>
+            <tbody>
+                <tr>
+                    <td>Identyfikator</td>
+                    <td>Data utworzenia</td>
+                    <td>Dokument</td>
+                </tr>
+                {% for package in package_list %}
+                <tr>
+                    <td>{{package.id}}</td>
+                    <td>{{package.creation_date}}</td>
+                    <td><a href="#" document-id="{{package.id}}" document-url="{{package.document_url}}" onclick="downloadPackageDocument(event)">Pobierz</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </section>
     <footer>
         <p class="footer-inline left">
