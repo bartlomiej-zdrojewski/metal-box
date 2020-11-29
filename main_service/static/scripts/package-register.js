@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     const INPUT_RECEIVER_POSTAL_CODE_ID = "receiver_postal_code";
     const INPUT_RECEIVER_COUNTRY_ID = "receiver_country";
     const INPUT_RECEIVER_PHONE_NUMBER_ID = "receiver_phone_number";
-    const INPUT_IMAGE_ID = "receiver_phone_number";
+    const INPUT_IMAGE_ID = "image";
     const BUTTON_REGISTER_ID = "button_register";
     
     const POST = "POST";
@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
         INPUT_RECEIVER_CITY_ID,
         INPUT_RECEIVER_POSTAL_CODE_ID,
         INPUT_RECEIVER_COUNTRY_ID,
-        INPUT_RECEIVER_PHONE_NUMBER_ID
+        INPUT_RECEIVER_PHONE_NUMBER_ID,
+        INPUT_IMAGE_ID
     ].forEach(id => setInputValidation(id));
     form.addEventListener("submit", e => onSubmit(e));
 
@@ -148,26 +149,26 @@ document.addEventListener('DOMContentLoaded', function (event) {
         return true;
     }
 
-    // TODO fix suspicious delay on autocomplete
     // TODO add image validation
     function validateForm() {
         let isFormValid = true;
-        const isSenderNameValid = validateInputNotEmpty(INPUT_SENDER_NAME_ID)
-        const isSenderSurnameValid = validateInputNotEmpty(INPUT_SENDER_SURNAME_ID)
-        const isSenderStreetValid = validateInputNotEmpty(INPUT_SENDER_STREET_ID)
-        const isSenderApartmentNumberValid = validateInputNotEmpty(INPUT_SENDER_APARTMENT_NUMBER_ID)
-        const isSenderCityValid = validateInputNotEmpty(INPUT_SENDER_CITY_ID)
-        const isSenderPostalCodeValid = validatePostalCode(INPUT_SENDER_POSTAL_CODE_ID)
-        const isSenderCountryValid = validateInputNotEmpty(INPUT_SENDER_COUNTRY_ID)
-        const isSenderPhoneNumberValid = validatePhoneNumber(INPUT_SENDER_PHONE_NUMBER_ID)
-        const isReceiverNameValid = validateInputNotEmpty(INPUT_RECEIVER_NAME_ID)
-        const isReceiverSurnameValid = validateInputNotEmpty(INPUT_RECEIVER_SURNAME_ID)
-        const isReceiverStreetValid = validateInputNotEmpty(INPUT_RECEIVER_STREET_ID)
-        const isReceiverApartmentNumberValid = validateInputNotEmpty(INPUT_RECEIVER_APARTMENT_NUMBER_ID)
-        const isReceiverCityValid = validateInputNotEmpty(INPUT_RECEIVER_CITY_ID)
-        const isReceiverPostalCodeValid = validatePostalCode(INPUT_RECEIVER_POSTAL_CODE_ID)
-        const isReceiverCountryValid = validateInputNotEmpty(INPUT_RECEIVER_COUNTRY_ID)
-        const isReceiverPhoneNumberValid = validatePhoneNumber(INPUT_RECEIVER_PHONE_NUMBER_ID)
+        const isSenderNameValid = validateInputNotEmpty(INPUT_SENDER_NAME_ID);
+        const isSenderSurnameValid = validateInputNotEmpty(INPUT_SENDER_SURNAME_ID);
+        const isSenderStreetValid = validateInputNotEmpty(INPUT_SENDER_STREET_ID);
+        const isSenderApartmentNumberValid = validateInputNotEmpty(INPUT_SENDER_APARTMENT_NUMBER_ID);
+        const isSenderCityValid = validateInputNotEmpty(INPUT_SENDER_CITY_ID);
+        const isSenderPostalCodeValid = validatePostalCode(INPUT_SENDER_POSTAL_CODE_ID);
+        const isSenderCountryValid = validateInputNotEmpty(INPUT_SENDER_COUNTRY_ID);
+        const isSenderPhoneNumberValid = validatePhoneNumber(INPUT_SENDER_PHONE_NUMBER_ID);
+        const isReceiverNameValid = validateInputNotEmpty(INPUT_RECEIVER_NAME_ID);
+        const isReceiverSurnameValid = validateInputNotEmpty(INPUT_RECEIVER_SURNAME_ID);
+        const isReceiverStreetValid = validateInputNotEmpty(INPUT_RECEIVER_STREET_ID);
+        const isReceiverApartmentNumberValid = validateInputNotEmpty(INPUT_RECEIVER_APARTMENT_NUMBER_ID);
+        const isReceiverCityValid = validateInputNotEmpty(INPUT_RECEIVER_CITY_ID);
+        const isReceiverPostalCodeValid = validatePostalCode(INPUT_RECEIVER_POSTAL_CODE_ID);
+        const isReceiverCountryValid = validateInputNotEmpty(INPUT_RECEIVER_COUNTRY_ID);
+        const isReceiverPhoneNumberValid = validatePhoneNumber(INPUT_RECEIVER_PHONE_NUMBER_ID);
+        const isImageVaild = validateInputNotEmpty(INPUT_IMAGE_ID);
         isFormValid &&= isSenderNameValid;
         isFormValid &&= isSenderSurnameValid;
         isFormValid &&= isSenderStreetValid;
@@ -184,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         isFormValid &&= isReceiverPostalCodeValid;
         isFormValid &&= isReceiverCountryValid;
         isFormValid &&= isReceiverPhoneNumberValid;
+        isFormValid &&= isImageVaild;
         setButtonRegisterEnabled(isFormValid);
         return isFormValid;
     }
