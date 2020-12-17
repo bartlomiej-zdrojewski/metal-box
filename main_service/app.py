@@ -4,18 +4,19 @@ from datetime import datetime, timedelta
 from flask import Flask, request, url_for, abort, jsonify, make_response, render_template
 from flask_jwt_extended import JWTManager, create_access_token
 from api import *
+from dto.address import *
+from dto.person import *
 
 GET = "GET"
 POST = "POST"
 SESSION_ID_KEY = "session-id"
-SESSION_EXPIRATION_TIME = 300
+SESSION_EXPIRATION_TIME = 3600  # TODO 300
 JWT_SECRET_KEY = "JWT_SECRET"
 JWT_TOKEN_KEY = "jwt-token"
-JWT_TOKEN_EXPIRATION_TIME = SESSION_EXPIRATION_TIME
 
 app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_TOKEN_EXPIRATION_TIME
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = SESSION_EXPIRATION_TIME
 api = Api(SESSION_EXPIRATION_TIME)
 jwt = JWTManager(app)
 
@@ -31,62 +32,32 @@ def loginPage():
 
 
 @app.route("/register", methods=[GET])
-def registrationPage():
+def registerPage():
     return render_template("register.html")
 
 
-# TODO middleware for /secure path
+# TODO (8) add option to delete package when it's still new
+# TODO (9) remember to delete images and PDFs
 @app.route("/secure/package/list", methods=[GET])
 def packageListPage():
-    session_id = request.cookies.get(SESSION_ID_KEY)
-    validation_result = api.validateSession(session_id)
-    if not validation_result:
-        abort(401)
-    login = validation_result[0]
-    expiration_date = validation_result[1]
-    access_token = create_access_token(identity=login)
-    package_list = api.getUserPackageList(login)
-    response = make_response(render_template(
-        "secure/package-list.html", package_list=package_list, package_count=len(package_list)))
-    response.set_cookie(SESSION_ID_KEY, session_id,
-                        expires=expiration_date, secure=True, httponly=True)
-    response.set_cookie(JWT_TOKEN_KEY, access_token,
-                        expires=expiration_date, secure=True, httponly=False)
-    return response
+    user_login = request.environ["secure_user_login"]
+    package_list = api.fetchUserPackageList(user_login)
+    return make_response(render_template(
+        "secure/package-list.html",
+        package_list=package_list,
+        package_count=len(package_list)
+    ))
 
 
 @app.route("/secure/package/register", methods=[GET])
 def packageRegisterPage():
-    session_id = request.cookies.get(SESSION_ID_KEY)
-    validation_result = api.validateSession(session_id)
-    if not validation_result:
-        abort(401)
-    login = validation_result[0]
-    expiration_date = validation_result[1]
-    access_token = create_access_token(identity=login)
-    response = make_response(render_template("secure/package-register.html"))
-    response.set_cookie(SESSION_ID_KEY, session_id,
-                        expires=expiration_date, secure=True, httponly=True)
-    response.set_cookie(JWT_TOKEN_KEY, access_token,
-                        expires=expiration_date, secure=True, httponly=False)
-    return response
+    # TODO autofill, get user data
+    return make_response(render_template("secure/package-register.html"))
 
 
 @app.route("/secure/logout", methods=[GET])
 def logoutPage():
-    session_id = request.cookies.get(SESSION_ID_KEY)
-    validation_result = api.validateSession(session_id)
-    if not validation_result:
-        abort(401)
-    login = validation_result[0]
-    expiration_date = validation_result[1]
-    access_token = create_access_token(identity=login)
-    response = make_response(render_template("secure/logout.html"))
-    response.set_cookie(SESSION_ID_KEY, session_id,
-                        expires=expiration_date, secure=True, httponly=True)
-    response.set_cookie(JWT_TOKEN_KEY, access_token,
-                        expires=expiration_date, secure=True, httponly=False)
-    return response
+    return make_response(render_template("secure/logout.html"))
 
 
 @app.route("/api/login", methods=[POST])
@@ -111,9 +82,10 @@ def logoutRequest():
     if not session_id:
         return jsonify(error_message="Session id must not be empty."), 400
     if not api.validateSession(session_id):
-        return jsonify(error_message="Invalid session."), 400
+        return jsonify(error_message="Session is invalid."), 400
     if not api.destroySession(session_id):
-        return jsonify(error_message="Failed to destroy session (id: {}).".format(session_id)), 500
+        return jsonify(error_message="Failed to destroy session "
+                       "(id: {}).".format(session_id)), 500
     response = jsonify(redirect_url=url_for("loginPage"))
     response.set_cookie(SESSION_ID_KEY, "", expires=0,
                         secure=True, httponly=True)
@@ -138,28 +110,61 @@ def userRequest(login):
     return "OK", 200
 
 
+@app.before_request
+def before_request():
+    if request.path.startswith("/secure"):
+        session_id = request.cookies.get(SESSION_ID_KEY)
+        validation_result = api.validateSession(session_id)
+        if not validation_result:
+            request.environ["secure_session_id"] = session_id
+            request.environ["secure_session_valid"] = False
+            abort(401)
+        request.environ["secure_session_id"] = session_id
+        request.environ["secure_session_valid"] = True
+        request.environ["secure_session_expiration_date"] = validation_result[0]
+        request.environ["secure_user_login"] = validation_result[1]
+
+
+@app.after_request
+def after_request(response):
+    if request.path.startswith("/secure"):
+        if request.environ["secure_session_valid"]:
+            session_id = request.environ["secure_session_id"]
+            session_expiration_date = request.environ[
+                "secure_session_expiration_date"]
+            user_login = request.environ["secure_user_login"]
+            access_token = create_access_token(identity=user_login)
+            response.set_cookie(SESSION_ID_KEY, session_id,
+                                expires=session_expiration_date,
+                                secure=True, httponly=True)
+            response.set_cookie(JWT_TOKEN_KEY, access_token,
+                                expires=session_expiration_date,
+                                secure=True, httponly=False)
+    return response
+
+
 @app.errorhandler(400)
-def page_unauthorized(error):
+def badRequestErrorPage(error):
     return render_template("error/400.html", error=error)
 
 
 @app.errorhandler(401)
-def page_unauthorized(error):
+def unauthorizedErrorPage(error):
     return render_template("error/401.html", error=error)
 
 
 @app.errorhandler(403)
-def page_unauthorized(error):
-    return render_template("error/401.html", error=error)
+def forbiddenErrorPage(error):
+    return render_template("error/403.html", error=error)
 
 
 @app.errorhandler(404)
-def page_not_found(error):
+def notFoundErrorPage(error):
     return render_template("error/404.html", error=error)
 
 
 @app.errorhandler(500)
-def page_not_found(error):
+def internalServerErrorPage(error):
     return render_template("error/500.html", error=error)
 
 
@@ -173,63 +178,52 @@ def validateLoginRequest(request):
     if not api.doesUserExist(login):
         return "User does not exists (login: {}).".format(login)
     if not api.validateUser(login, password):
-        return "Invalid login or password."
+        return "Password is invalid."
     return None
 
 
 def validateRegisterRequest(request):
-    fields = [
-        request.form.get("login"),
-        request.form.get("password"),
-        request.form.get("password_repeat"),
-        request.form.get("name"),
-        request.form.get("surname"),
-        request.form.get("birthdate"),
-        request.form.get("pesel"),
-        request.form.get("street"),
-        request.form.get("apartment_number"),
-        request.form.get("city"),
-        request.form.get("postal_code"),
-        request.form.get("country")]
-    login = fields[0]
-    password = fields[1]
-    password_repeat = fields[2]
-    birthdate = fields[5]
-    pesel = fields[6]
-    postal_code = fields[10]
-    for field in fields:
-        if not field:
-            return "No form field can be left empty. Form fields are: login, password, password_repeat, \
-                name, surname, birthdate, pesel, street, apartment_number, city, postal_code, country."
+    login = request.form.get("login")
+    password = request.form.get("password")
+    password_repeat = request.form.get("password_repeat")
+    if not login:
+        return "Login must not be empty."
+    if not password:
+        return "Password must not be empty."
+    if not password_repeat:
+        return "Password repeat must not be empty."
     if api.doesUserExist(login):
         return "User already exists (login: {}).".format(login)
     if len(login) < 5:
         return "Login must consist of at least 5 characters."
     if not re.search("^[a-zA-Z]+$", login):
-        return "Login may only constist of small and big letters of latin alphabet."
+        return "Login may only constist of small and big letters of " \
+               "latin alphabet."
     if len(password) < 8:
         return "Password must consist of at least 8 characters."
-    if not re.search("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*])(.*)$", password):
-        return "Password must contain small and big letters, digits and special characters (!@#$%&*)."
+    if not re.search("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*])(.*)$",
+                     password):
+        return "Password must contain small and big letters, digits and " \
+               "special characters (!@#$%&*)."
     if password != password_repeat:
         return "Password repeat does not match the original password."
-    if not re.search("^\d{4}-\d{2}-\d{2}$", birthdate):
-        return "Birthdate must match the YYYY-MM-DD format."
-    try:
-        datetime.strptime(birthdate, '%Y-%m-%d')
-    except ValueError:
-        return "Birthdate must be a valid date."
-    if len(pesel) != 11:
-        return "PESEL must consist of exactly 11 characters."
-    if not re.search("^[0-9]+$", pesel):
-        return "PESEL may only consist of digits."
-    pesel_checksum = 0
-    for i in range(len(pesel) - 1):
-        digit = (int(pesel[i]) * ([1, 3, 7, 9])[i % 4]) % 10
-        pesel_checksum += digit
-    pesel_checksum = (10 - (pesel_checksum % 10)) % 10
-    if int(pesel[10]) != pesel_checksum:
-        return "PESEL is invalid. Check digit is invalid ({} vs {}).".format(pesel[10], pesel_checksum)
-    if not re.search("^\d{2}-\d{3}$", postal_code):
-        return "Postal code must match the XX-YYY format."
+    person = Person(
+        request.form.get("name"),
+        request.form.get("surname"),
+        request.form.get("birthdate"),
+        request.form.get("pesel"))
+    person_validation_error = person.validate()
+    if person_validation_error:
+        return "Personal data is invalid. {}".format(person_validation_error)
+    address = Address(
+        request.form.get("street"),
+        request.form.get("building_number"),
+        request.form.get("apartment_number"),
+        request.form.get("postal_code"),
+        request.form.get("city"),
+        request.form.get("country")
+    )
+    address_validation_error = address.validate()
+    if address_validation_error:
+        return "Address data is invalid. {}".format(address_validation_error)
     return None

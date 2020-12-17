@@ -4,8 +4,11 @@ services:
     build:
       context: .
       dockerfile: ./docker/main_service/Dockerfile
-    ports: ["8080:8080"]
-    volumes: [./main_service:/main_service]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./main_service:/main_service
+      - ./dto:/main_service/dto
     environment:
       FLASK_ENV: development
       JWT_SECRET: $JWT_SECRET
@@ -13,8 +16,11 @@ services:
     build:
       context: .
       dockerfile: ./docker/file_service/Dockerfile
-    ports: ["8081:8081"]
-    volumes: [./file_service:/file_service]
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./file_service:/file_service
+      - ./dto:/file_service/dto
     environment:
       FLASK_ENV: development
       JWT_SECRET: $JWT_SECRET

@@ -1,10 +1,12 @@
-import os
 import re
+import os
 import redis
 from flask import Flask, request, jsonify, send_file
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS
 from api import *
+from dto.address import *
+from dto.person import *
 
 GET = "GET"
 POST = "POST"
@@ -17,70 +19,95 @@ jwt = JWTManager(app)
 CORS(app)
 
 
-@app.route("/api/package/<id>",  methods=[GET])
+@app.route("/",  methods=[GET])
+def homePage():
+    return "OK", 200
+
+
+@app.route("/api/package/<serial_number>",  methods=[GET])
 @jwt_required
-def packageDocumentDownloadRequest(id):
-    if not api.doesPackageExist(id):
-        return jsonify(error_message="Package does not exists (id: {}).".format(id)), 404
+def packageDocumentDownloadRequest(serial_number):
+    if not api.doesPackageExist(serial_number):
+        return jsonify(error_message="Package does not exists "
+                       "(id: {}).".format(id)), 404
     login = get_jwt_identity()
-    if not api.doesUserHaveAccessToPackage(login, id):
-        return jsonify(error_message="User does not have access to the package (user_login: {}, package_id: {}).".format(login, id)), 403
-    file_path = api.getPackageDocumentFilePath(id)
+    if not api.validateUserAccessToPackage(login, serial_number):
+        return jsonify(error_message="User does not have access to the package "
+                       "(user_login: {}, package_serial_number: "
+                       "{}).".format(login, serial_number)), 403
+    file_path = api.getPackageDocumentFilePath(serial_number)
     return send_file(file_path)
 
 
-@app.route("/api/package",  methods=[POST])
+@app.route("/api/package", methods=[POST])
 @jwt_required
 def packageRegisterRequest():
     request_error = validateRegisterRequest(request)
     if request_error:
         return jsonify(error_message=request_error), 400
     login = get_jwt_identity()
-    print(login, flush=True)
     api.registerPackageFromRequest(login, request)
     return "Created", 201
 
 
 def validateRegisterRequest(request):
-    fields = [
+    sender = Person(
         request.form.get("sender_name"),
-        request.form.get("sender_surname"),
+        request.form.get("sender_surname")
+    )
+    sender_validation_error = sender.validate(False)
+    if sender_validation_error:
+        return "Sender's personal data is invalid. " \
+               "{}".format(sender_validation_error)
+    sender_address = Address(
         request.form.get("sender_street"),
+        request.form.get("sender_building_number"),
         request.form.get("sender_apartment_number"),
-        request.form.get("sender_city"),
         request.form.get("sender_postal_code"),
-        request.form.get("sender_country"),
-        request.form.get("sender_phone_number"),
-        request.form.get("receiver_name"),
-        request.form.get("receiver_surname"),
-        request.form.get("receiver_street"),
-        request.form.get("receiver_apartment_number"),
-        request.form.get("receiver_city"),
-        request.form.get("receiver_postal_code"),
-        request.form.get("receiver_country"),
-        request.form.get("receiver_phone_number"),
-        request.files.get("image")]
-    sender_postal_code = fields[5]
-    sender_phone_number = fields[7]
-    receiver_postal_code = fields[13]
-    receiver_phone_number = fields[15]
-    image = fields[16]
-    for field in fields:
-        if not field:
-            return "No form field can be left empty. Form fields are: sender_name, sender_surname, " \
-                "sender_street, sender_apartment_number, sender_city, sender_postal_code, sender_country, " \
-                "sender_phone_number, receiver_name, receiver_surname, receiver_street, " \
-                "receiver_apartment_number, receiver_city, receiver_postal_code, receiver_country, " \
-                "receiver_phone_number, image."
-    if not re.search("^\d{2}-\d{3}$", sender_postal_code):
-        return "Sender's postal code must match the XX-YYY format."
+        request.form.get("sender_city"),
+        request.form.get("sender_country")
+    )
+    sender_address_validation_error = sender_address.validate()
+    if sender_address_validation_error:
+        return "Sender's address data is invalid. " \
+               "{}".format(sender_address_validation_error)
+    sender_phone_number = request.form.get("sender_phone_number")
+    if not sender_phone_number:
+        return "Sender's phone number must not be empty."
     if not re.search("^\d{9}$", sender_phone_number):
         return "Sender's phone number must consist of exactly 9 digits."
-    if not re.search("^\d{2}-\d{3}$", receiver_postal_code):
-        return "Receiver's postal code must match the XX-YYY format."
+    receiver = Person(
+        request.form.get("receiver_name"),
+        request.form.get("receiver_surname")
+    )
+    receiver_validation_error = receiver.validate(False)
+    if receiver_validation_error:
+        return "Receiver's personal data is invalid. " \
+               "{}".format(receiver_validation_error)
+    receiver_address = Address(
+        request.form.get("receiver_street"),
+        request.form.get("receiver_building_number"),
+        request.form.get("receiver_apartment_number"),
+        request.form.get("receiver_postal_code"),
+        request.form.get("receiver_city"),
+        request.form.get("receiver_country")
+    )
+    receiver_address_validation_error = receiver_address.validate()
+    if receiver_address_validation_error:
+        return "Receiver's address data is invalid. " \
+               "{}".format(receiver_address_validation_error)
+    receiver_phone_number = request.form.get("receiver_phone_number")
+    if not receiver_phone_number:
+        return "Receiver's phone number must not be empty."
     if not re.search("^\d{9}$", receiver_phone_number):
         return "Receiver's phone number must consist of exactly 9 digits."
+    image = request.files.get("image")
+    if not image:
+        return "Image must not be empty."
     if not image.filename:
         return "Image must not be empty."
-    # TODO allow only png, jpg and jpeg
+    _, image_file_extension = os.path.splitext(image.filename)
+    if image_file_extension.lower() not in [".png", ".jpg", ".jpeg"]:
+        return "Image file format is unsupported (format: {}). Only PNG and " \
+               "JPG formats are supported.".format(image_file_extension)
     return None

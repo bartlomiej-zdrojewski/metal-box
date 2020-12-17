@@ -4,3 +4,4 @@ pyopenssl
 flask-jwt-extended
 python-dateutil
 pycryptodome
+fpdf

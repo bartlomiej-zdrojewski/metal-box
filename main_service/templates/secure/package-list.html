@@ -33,8 +33,8 @@
                 </tr>
                 {% for package in package_list %}
                 <tr>
-                    <td>{{package.id}}</td>
-                    <td>{{package.creation_date}}</td>
+                    <td>{{package.serial_number}}</td>
+                    <td>{{package.register_date}}</td>
                     <td><a href="#" document-id="{{package.id}}" document-url="{{package.document_url}}" onclick="downloadPackageDocument(event)">Pobierz</a></td>
                 </tr>
                 {% endfor %}
