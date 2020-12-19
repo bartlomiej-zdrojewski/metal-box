@@ -36,8 +36,6 @@ def registerPage():
     return render_template("register.html")
 
 
-# TODO (8) add option to delete package when it's still new
-# TODO (9) remember to delete images and PDFs
 @app.route("/secure/package/list", methods=[GET])
 def packageListPage():
     user_login = request.environ["secure_user_login"]

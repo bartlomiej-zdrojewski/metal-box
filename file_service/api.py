@@ -1,6 +1,6 @@
+import os
 import uuid
 import redis
-import os.path
 from datetime import datetime
 from flask import abort
 from dto.const import *
@@ -24,6 +24,15 @@ class Api:
             return False
         return self.db.exists(self.getPackageIdFromSerialNumber(serial_number))
 
+    def getPackageStatus(self, serial_number):
+        if not self.doesPackageExist(serial_number):
+            abort(500,
+                  "Package does not exist "
+                  "(serial_number: {}).".format(serial_number))
+        package_id = self.getPackageIdFromSerialNumber(serial_number)
+        package = Package.loadFromData(self.db.get(package_id))
+        return package.status
+
     def getUserIdFromLogin(self, login):
         return USER_PREFIX + login
 
@@ -32,29 +41,11 @@ class Api:
             return False
         return self.db.exists(USER_PREFIX + login)
 
-    def validateUserAccessToPackage(self, user_login, package_serial_number):
-        if not self.doesUserExist(user_login):
-            abort(500,
-                  "Could not validate user access to package. User does not "
-                  "exist (login: {})".format(user_login))
-        if not self.doesPackageExist(package_serial_number):
-            abort(500,
-                  "Could not validate user access to package. Package does not "
-                  "exist (serial_number: {})".format(package_serial_number))
-        user_id = self.getUserIdFromLogin(user_login)
-        package_id = self.getPackageIdFromSerialNumber(package_serial_number)
-        if not self.db.hexists(PACKAGE_ID_TO_USER_ID_MAP, package_id):
-            abort(500,
-                  "Could not validate user access to package. No user match "
-                  "the package (user_login: {}, package_serial_number: "
-                  "{}).".format(user_login, package_serial_number))
-        return user_id == self.db.hget(PACKAGE_ID_TO_USER_ID_MAP, package_id)
-
     def getPackageDocumentFilePath(self, serial_number):
         if not self.doesPackageExist(serial_number):
             abort(500,
                   "Package does not exist "
-                  "(serial_number: {})".format(serial_number))
+                  "(serial_number: {}).".format(serial_number))
         file_path = ""
         package_id = self.getPackageIdFromSerialNumber(serial_number)
         package = Package.loadFromData(self.db.get(package_id))
@@ -71,7 +62,7 @@ class Api:
         if not self.doesUserExist(user_login):
             abort(500,
                   "Could not register package. User does not exist "
-                  "(user_login: {})".format(user_login))
+                  "(user_login: {}).".format(user_login))
         sender_phone_number = request.form.get("sender_phone_number")
         receiver_phone_number = request.form.get("receiver_phone_number")
         image = request.files.get("image")
@@ -136,3 +127,44 @@ class Api:
         self.db.set(package.id, package.toData())
         self.db.hset(PACKAGE_ID_TO_USER_ID_MAP, package.id,
                      self.getUserIdFromLogin(user_login))
+
+    def deletePackage(self, serial_number):
+        if not self.doesPackageExist(serial_number):
+            abort(500,
+                  "Package does not exist "
+                  "(serial_number: {}).".format(serial_number))
+        package_status = self.getPackageStatus(serial_number)
+        if package_status != PACKAGE_STATUS_NEW:
+            abort(500,
+                  "Package must be new (serial_number: {}, "
+                  "status: {}).".format(serial_number, package_status))
+        package_id = self.getPackageIdFromSerialNumber(serial_number)
+        package = Package.loadFromData(self.db.get(package_id))
+        if not self.db.hexists(PACKAGE_ID_TO_USER_ID_MAP, package.id):
+            abort(500,
+                  "No user match the package id: "
+                  "{}.".format(package.id))
+        if os.path.isfile(package.document_file_path):
+            os.remove(package.document_file_path)
+        if os.path.isfile(package.image_file_path):
+            os.remove(package.image_file_path)
+        self.db.hdel(PACKAGE_ID_TO_USER_ID_MAP, package.id)
+        self.db.delete(package.id)
+
+    def validateUserAccessToPackage(self, user_login, package_serial_number):
+        if not self.doesUserExist(user_login):
+            abort(500,
+                  "Could not validate user access to package. User does not "
+                  "exist (login: {}).".format(user_login))
+        if not self.doesPackageExist(package_serial_number):
+            abort(500,
+                  "Could not validate user access to package. Package does not "
+                  "exist (serial_number: {}).".format(package_serial_number))
+        user_id = self.getUserIdFromLogin(user_login)
+        package_id = self.getPackageIdFromSerialNumber(package_serial_number)
+        if not self.db.hexists(PACKAGE_ID_TO_USER_ID_MAP, package_id):
+            abort(500,
+                  "Could not validate user access to package. No user match "
+                  "the package (user_login: {}, package_serial_number: "
+                  "{}).".format(user_login, package_serial_number))
+        return user_id == self.db.hget(PACKAGE_ID_TO_USER_ID_MAP, package_id)

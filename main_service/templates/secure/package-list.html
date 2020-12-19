@@ -27,15 +27,22 @@
         <table>
             <tbody>
                 <tr>
-                    <td>Identyfikator</td>
-                    <td>Data utworzenia</td>
-                    <td>Dokument przewozowy</td>
+                    <td>Numer seryjny</td>
+                    <td>Data zarejestrowania</td>
+                    <td>Status</td>
+                    <td>Zarządzanie</td>
                 </tr>
                 {% for package in package_list %}
                 <tr>
                     <td>{{package.serial_number}}</td>
                     <td>{{package.register_date}}</td>
-                    <td><a href="#" document-id="{{package.id}}" document-url="{{package.document_url}}" onclick="downloadPackageDocument(event)">Pobierz</a></td>
+                    <td>{{package.status}}</td>
+                    <td><a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="downloadPackageDocument(this)">Pobierz</a>
+                    {% if package.is_deletable %}
+                    <span> / </span>
+                    <a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="deletePackage(this)">Usuń</a></td>
+                    {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

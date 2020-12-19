@@ -50,22 +50,31 @@ class Api:
     def fetchUserPackageList(self, login):
         if not self.doesUserExist(login):
             abort(500,
-                "Could not fetch package list. User does not exists "
-                "(login: {}).".format(login))
+                  "Could not fetch package list. User does not exists "
+                  "(login: {}).".format(login))
         package_list = []
         user_id = self.getUserIdFromLogin(login)
         for package_id in self.db.hkeys(PACKAGE_ID_TO_USER_ID_MAP):
             if user_id == self.db.hget(PACKAGE_ID_TO_USER_ID_MAP, package_id):
                 if not self.db.exists(package_id):
                     abort(500,
-                        "Could not fetch package list. One of the packages "
-                        "does not exist (id: {}).".format(package_id))
+                          "Could not fetch package list. One of the packages "
+                          "does not exist (id: {}).".format(package_id))
                 package = Package.loadFromData(self.db.get(package_id))
+                package_register_date = dateutil.parser.parse(
+                    package.register_date)
+                package_register_date_text = package_register_date.strftime(
+                    "%Y-%m-%d %H:%M:%S")
+                package_is_deletable = "false"
+                if package.status == PACKAGE_STATUS_NEW:
+                    package_is_deletable = "true"
                 package_list.append({
                     "serial_number": package.serial_number,
-                    "register_date": package.register_date,
-                    "document_url": FILE_SERVICE_API_URL + "package/" +
-                    package.serial_number
+                    "register_date": package_register_date_text,
+                    "status": package.getStatusText(),
+                    "url": FILE_SERVICE_API_URL + "package/" +
+                    package.serial_number,
+                    "is_deletable": package_is_deletable
                 })
         return package_list
 
@@ -74,14 +83,14 @@ class Api:
         password = request.form.get("password")
         if not login:
             abort(500,
-                "Could not register user. Login must not be empty.")
+                  "Could not register user. Login must not be empty.")
         if not password:
             abort(500,
-                "Could not register user. Password must not be empty.")
+                  "Could not register user. Password must not be empty.")
         if self.doesUserExist(login):
             abort(500,
-                "Could not register user. User already exists "
-                "(login: {}).".format(login))
+                  "Could not register user. User already exists "
+                  "(login: {}).".format(login))
         person = Person(
             request.form.get("name"),
             request.form.get("surname"),
@@ -104,18 +113,18 @@ class Api:
         user_validation_error = user.validate()
         if user_validation_error:
             abort(500,
-                "Could not register user. User is invalid. "
-                "{}".format(user_validation_error))
+                  "Could not register user. User is invalid. "
+                  "{}".format(user_validation_error))
         self.db.set(user.id, user.toData())
 
     def createSession(self, login):
         if not login:
             abort(500,
-                "Could not create session. Login must not be empty.")
+                  "Could not create session. Login must not be empty.")
         if not self.doesUserExist(login):
             abort(500,
-                "Could not create session. User does not exist "
-                "(login: {}).".format(login))
+                  "Could not create session. User does not exist "
+                  "(login: {}).".format(login))
         session_id = str(uuid.uuid4()).replace("-", "")
         session_expiration_date = datetime.utcnow(
         ) + timedelta(seconds=self.session_expiration_time)
@@ -132,14 +141,14 @@ class Api:
         if not self.db.hexists(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP,
                                session_id):
             abort(500,
-                "No expiration date match the session id: "
-                "{}.".format(session_id))
+                  "No expiration date match the session id: "
+                  "{}.".format(session_id))
         session_expiration_date = dateutil.parser.parse(self.db.hget(
             SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP, session_id))
         if session_expiration_date <= datetime.utcnow():
             if not self.destroySession(session_id):
                 abort(500,
-                    "Failed to destroy session (id: {}).".format(session_id))
+                      "Failed to destroy session (id: {}).".format(session_id))
             return None
         session_expiration_date = datetime.utcnow(
         ) + timedelta(seconds=self.session_expiration_time)
@@ -154,8 +163,8 @@ class Api:
         if not self.db.hexists(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP,
                                session_id):
             abort(500,
-                "No expiration date match the session id: "
-                "{}.".format(session_id))
+                  "No expiration date match the session id: "
+                  "{}.".format(session_id))
         self.db.hdel(SESSION_ID_TO_USER_LOGIN_MAP, session_id)
         self.db.hdel(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP, session_id)
         return True

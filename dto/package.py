@@ -112,6 +112,17 @@ class Package:
             return "Status is invalid: {}.".format(self.status)
         return None
 
+    def getStatusText(self):
+        if self.status == PACKAGE_STATUS_NEW:
+            return "Nowa"
+        elif self.status == PACKAGE_STATUS_IN_MAILBOX:
+            return "Oczekuje na odebranie z paczkomatu"
+        elif self.status == PACKAGE_STATUS_RECEIVED_FROM_MAILBOX:
+            return "Odebrana z paczkomatu"
+        elif self.status == PACKAGE_STATUS_RECEIVED_FROM_SENDER:
+            return "Odebrana od nadawcy"
+        return "Nieznany status"
+
     def generateDocument(self):
         validation_error = self.validate()
         if validation_error:
@@ -136,8 +147,8 @@ class Package:
 
     def __add_table_to_pdf(self, pdf):
         font_size = pdf.font_size
-        column_count = 2
-        column_width = (pdf.w - pdf.l_margin - pdf.r_margin) / column_count / 2
+        column_width = 0.25 * (pdf.w - pdf.l_margin - pdf.r_margin)
+        extended_colum_width = 2 * column_width
         row_height = 5 * font_size
         sender_text = "{}\n{}\ntel. {}".format(
             self.sender.toString(),
@@ -148,13 +159,16 @@ class Package:
             self.receiver_address.toString(),
             self.receiver_phone_number)
         pdf.cell(column_width, row_height, "Numer seryjny", border=1)
-        pdf.cell(column_width, row_height, self.serial_number, border=1)
+        pdf.multi_cell(extended_colum_width, row_height,
+                       self.serial_number, border=1)
         pdf.ln(0)
         pdf.cell(column_width, row_height, "Nadawca", border=1)
-        pdf.multi_cell(column_width, font_size, txt=sender_text, border=1)
+        pdf.multi_cell(extended_colum_width, font_size,
+                       txt=sender_text, border=1)
         pdf.ln(0)
         pdf.cell(column_width, row_height, "Odbiorca", border=1)
-        pdf.multi_cell(column_width, font_size, txt=receiver_text, border=1)
+        pdf.multi_cell(extended_colum_width, font_size,
+                       txt=receiver_text, border=1)
         pdf.ln(1)
 
     def __add_image_to_pdf(self, pdf):
@@ -162,6 +176,6 @@ class Package:
             raise Exception("Could not generate package document "
                             "(package_serial_number: {}). Image file "
                             "does not exist.").format(self.serial_number)
-        image_width = (pdf.w - pdf.l_margin - pdf.r_margin) / 2
+        image_width = 0.75 * (pdf.w - pdf.l_margin - pdf.r_margin)
         pdf.image(self.image_file_path, w=image_width)
         pdf.ln(1)

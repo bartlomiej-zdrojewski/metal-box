@@ -5,11 +5,13 @@ from flask import Flask, request, jsonify, send_file
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS
 from api import *
+from dto.const import *
 from dto.address import *
 from dto.person import *
 
 GET = "GET"
 POST = "POST"
+DELETE = "DELETE"
 JWT_SECRET_KEY = "JWT_SECRET"
 
 app = Flask(__name__, static_url_path="")
@@ -24,12 +26,12 @@ def homePage():
     return "OK", 200
 
 
-@app.route("/api/package/<serial_number>",  methods=[GET])
+@app.route("/api/package/<serial_number>", methods=[GET])
 @jwt_required
 def packageDocumentDownloadRequest(serial_number):
     if not api.doesPackageExist(serial_number):
         return jsonify(error_message="Package does not exists "
-                       "(id: {}).".format(id)), 404
+                       "(serial_number: {}).".format(serial_number)), 404
     login = get_jwt_identity()
     if not api.validateUserAccessToPackage(login, serial_number):
         return jsonify(error_message="User does not have access to the package "
@@ -48,6 +50,25 @@ def packageRegisterRequest():
     login = get_jwt_identity()
     api.registerPackageFromRequest(login, request)
     return "Created", 201
+
+
+@app.route("/api/package/<serial_number>", methods=[DELETE])
+@jwt_required
+def packageDeleteRequest(serial_number):
+    if not api.doesPackageExist(serial_number):
+        return jsonify(error_message="Package does not exists "
+                       "(serial_number: {}).".format(serial_number)), 404
+    package_status = api.getPackageStatus(serial_number)
+    if package_status != PACKAGE_STATUS_NEW:
+        return jsonify(error_message="Package must be new (serial_number: {}, "
+                       "status: {}).".format(serial_number, package_status)), 403
+    login = get_jwt_identity()
+    if not api.validateUserAccessToPackage(login, serial_number):
+        return jsonify(error_message="User does not have access to the package "
+                       "(user_login: {}, package_serial_number: "
+                       "{}).".format(login, serial_number)), 403
+    api.deletePackage(serial_number)
+    return "OK", 200
 
 
 def validateRegisterRequest(request):
