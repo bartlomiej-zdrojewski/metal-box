@@ -80,28 +80,24 @@ class Api:
         serial_number = str(uuid.uuid4()).replace("-", "")
         sender = Person(
             request.form.get("sender_name"),
-            request.form.get("sender_surname")
-        )
+            request.form.get("sender_surname"))
         sender_address = Address(
             request.form.get("sender_street"),
             request.form.get("sender_building_number"),
             request.form.get("sender_apartment_number"),
             request.form.get("sender_postal_code"),
             request.form.get("sender_city"),
-            request.form.get("sender_country")
-        )
+            request.form.get("sender_country"))
         receiver = Person(
             request.form.get("receiver_name"),
-            request.form.get("receiver_surname")
-        )
+            request.form.get("receiver_surname"))
         receiver_address = Address(
             request.form.get("receiver_street"),
             request.form.get("receiver_building_number"),
             request.form.get("receiver_apartment_number"),
             request.form.get("receiver_postal_code"),
             request.form.get("receiver_city"),
-            request.form.get("receiver_country")
-        )
+            request.form.get("receiver_country"))
         image_file_path = "{}image_{}{}".format(
             IMAGE_FILES_DIRECTORY, serial_number, image_file_extension)
         package = Package(
@@ -116,8 +112,7 @@ class Api:
             receiver,
             receiver_address,
             receiver_phone_number,
-            PACKAGE_STATUS_NEW
-        )
+            PACKAGE_STATUS_NEW)
         package_validation_error = package.validate()
         if package_validation_error:
             abort(500,

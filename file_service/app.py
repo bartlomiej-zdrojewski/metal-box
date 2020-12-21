@@ -8,11 +8,6 @@ from dto.const import *
 from dto.address import *
 from dto.person import *
 
-GET = "GET"
-POST = "POST"
-DELETE = "DELETE"
-JWT_SECRET_KEY = "JWT_SECRET"
-
 app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
 api = Api()

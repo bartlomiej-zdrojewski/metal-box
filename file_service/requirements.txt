@@ -1,6 +1,6 @@
-flask
-redis
 pyopenssl
+fpdf
+redis
+flask
 flask-jwt-extended
 flask-cors
-fpdf

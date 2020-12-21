@@ -1,7 +1,7 @@
-flask
-redis
-pyopenssl
-flask-jwt-extended
-python-dateutil
-pycryptodome
 fpdf
+python-dateutil
+pyopenssl
+fpdf
+redis
+flask
+flask-jwt-extended

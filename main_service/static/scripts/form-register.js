@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         BAD_REQUEST: 400,
         NOT_FOUND: 404
     };
-    const API_URL = "/api";
+    const API_URL = "https://localhost:8083/api";
 
     const loginPattern = new RegExp(/^[a-zA-Z]+$/);
     const passwordPattern = new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*])(.*)$/);
@@ -393,6 +393,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         let params = {
             method: POST,
             body: new FormData(form),
+            credentials: "include",
             redirect: "follow"
         };
         fetch(url, params)

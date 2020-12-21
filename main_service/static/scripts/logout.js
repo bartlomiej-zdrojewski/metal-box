@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         OK: 200,
         BAD_REQUEST: 400
     };
-    const API_URL = "/api";
+    const API_URL = "https://localhost:8083/api";
 
     logout();
 
@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         let url = API_URL + "/logout";
         let params = {
             method: GET,
+            credentials: "include",
             redirect: "follow"
         };
         fetch(url, params)

@@ -1,3 +1,12 @@
+GET = "GET"
+POST = "POST"
+DELETE = "DELETE"
+
+SESSION_ID_KEY = "session-id"
+JWT_TOKEN_KEY = "jwt-token"
+JWT_SECRET_KEY = "JWT_SECRET"
+SESSION_EXPIRATION_TIME = 3600  # TODO 300
+
 SALT_KEY = "salt"
 USER_PREFIX = "user_"
 PACKAGE_PREFIX = "package_"
@@ -7,14 +16,14 @@ SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP = \
     "session_id_to_session_expiration_date_map"
 PACKAGE_ID_TO_USER_ID_MAP = "package_id_to_user_id_map"
 
-MAIN_SERVICE_ORIGIN = "https://localhost:8080/"
-COURIER_SERVICE_ORIGIN = "https://localhost:8081/"
-MAILBOX_SERVICE_ORIGIN = "https://localhost:8082/"
-AUTHORIZATION_SERVICE_ORIGIN = "https://localhost:8083/"
-FILE_SERVICE_ORIGIN = "https://localhost:8084/"
+MAIN_SERVICE_ORIGIN = "https://localhost:8080"
+COURIER_SERVICE_ORIGIN = "https://localhost:8081"
+MAILBOX_SERVICE_ORIGIN = "https://localhost:8082"
+AUTHORIZATION_SERVICE_ORIGIN = "https://localhost:8083"
+FILE_SERVICE_ORIGIN = "https://localhost:8084"
+AUTHORIZATION_SERVICE_API_URL = AUTHORIZATION_SERVICE_ORIGIN + "/api"
+FILE_SERVICE_API_URL = FILE_SERVICE_ORIGIN + "/api"
 
-AUTHORIZATION_SERVICE_API_URL = AUTHORIZATION_SERVICE_ORIGIN + "/api/"
-FILE_SERVICE_API_URL = FILE_SERVICE_ORIGIN + "/api/"
 IMAGE_FILES_DIRECTORY = "files/images/"
 DOCUMENT_FILES_DIRECTORY = "files/documents/"
 

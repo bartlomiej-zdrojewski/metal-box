@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         OK: 200,
         UNAUTHORIZED: 401
     };
-    const API_URL = "/api";
+    const API_URL = "https://localhost:8083/api";
 
     let isLogging = false;
     let form = document.getElementById(FORM_ID);
@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         let params = {
             method: POST,
             body: new FormData(form),
+            credentials: "include",
             redirect: "follow"
         };
         fetch(url, params)
