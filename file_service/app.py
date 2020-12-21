@@ -1,9 +1,8 @@
 import re
 import os
-import redis
 from flask import Flask, request, jsonify, send_file
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from api import *
 from dto.const import *
 from dto.address import *
@@ -18,7 +17,10 @@ app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
 api = Api()
 jwt = JWTManager(app)
-CORS(app)
+CORS(app, origins=[
+    MAIN_SERVICE_ORIGIN,
+    COURIER_SERVICE_ORIGIN],
+    allow_headers=["Authorization"])
 
 
 @app.route("/",  methods=[GET])
@@ -28,6 +30,7 @@ def homePage():
 
 @app.route("/api/package/<serial_number>", methods=[GET])
 @jwt_required
+@cross_origin()
 def packageDocumentDownloadRequest(serial_number):
     if not api.doesPackageExist(serial_number):
         return jsonify(error_message="Package does not exists "
@@ -43,8 +46,9 @@ def packageDocumentDownloadRequest(serial_number):
 
 @app.route("/api/package", methods=[POST])
 @jwt_required
+@cross_origin()
 def packageRegisterRequest():
-    request_error = validateRegisterRequest(request)
+    request_error = validatePackageRegisterRequest(request)
     if request_error:
         return jsonify(error_message=request_error), 400
     login = get_jwt_identity()
@@ -54,6 +58,7 @@ def packageRegisterRequest():
 
 @app.route("/api/package/<serial_number>", methods=[DELETE])
 @jwt_required
+@cross_origin()
 def packageDeleteRequest(serial_number):
     if not api.doesPackageExist(serial_number):
         return jsonify(error_message="Package does not exists "
@@ -71,7 +76,7 @@ def packageDeleteRequest(serial_number):
     return "OK", 200
 
 
-def validateRegisterRequest(request):
+def validatePackageRegisterRequest(request):
     sender = Person(
         request.form.get("sender_name"),
         request.form.get("sender_surname")

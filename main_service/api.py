@@ -104,12 +104,14 @@ class Api:
             request.form.get("city"),
             request.form.get("country")
         )
+        # TODO allow to register couriers
         user = User(
             self.getUserIdFromLogin(login),
             login,
             self.hashPassword(password),
             person,
-            address)
+            address,
+            False)
         user_validation_error = user.validate()
         if user_validation_error:
             abort(500,

@@ -12,12 +12,47 @@ services:
     environment:
       FLASK_ENV: development
       JWT_SECRET: $JWT_SECRET
+  courier_service:
+    build:
+      context: .
+      dockerfile: ./docker/courier_service/Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./courier_service:/courier_service
+      - ./dto:/courier_service/dto
+    environment:
+      FLASK_ENV: development
+      JWT_SECRET: $JWT_SECRET
+  mailbox_service:
+    build:
+      context: .
+      dockerfile: ./docker/mailbox_service/Dockerfile
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./mailbox_service:/mailbox_service
+      - ./dto:/mailbox_service/dto
+    environment:
+      FLASK_ENV: development
+  authorization_service:
+    build:
+      context: .
+      dockerfile: ./docker/authorization_service/Dockerfile
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./authorization_service:/authorization_service
+      - ./dto:/authorization_service/dto
+    environment:
+      FLASK_ENV: development
+      JWT_SECRET: $JWT_SECRET
   file_service:
     build:
       context: .
       dockerfile: ./docker/file_service/Dockerfile
     ports:
-      - "8081:8081"
+      - "8084:8084"
     volumes:
       - ./file_service:/file_service
       - ./dto:/file_service/dto
