@@ -44,7 +44,7 @@ def packageListPage():
 
 @app.route("/secure/package/register", methods=[GET])
 def packageRegisterPage():
-    # TODO autofill, get user data
+    # TODO autofill user data
     return make_response(render_template("secure/package-register.html"))
 
 

@@ -1,5 +1,4 @@
 import redis
-import json
 import uuid
 import base64
 import dateutil.parser
@@ -49,6 +48,11 @@ class Api:
     def registerUserFromRequest(self, request):
         login = request.form.get("login")
         password = request.form.get("password")
+        # TODO case insensitive
+        if request.form.get("is_courier") != "true":
+            is_courier = False
+        else:
+            is_courier = True
         if not login:
             abort(500,
                   "Could not register user. Login must not be empty.")
@@ -71,14 +75,13 @@ class Api:
             request.form.get("postal_code"),
             request.form.get("city"),
             request.form.get("country"))
-        # TODO allow to register couriers
         user = User(
             self.getUserIdFromLogin(login),
             login,
             self.hashPassword(password),
             person,
             address,
-            False)
+            is_courier)
         user_validation_error = user.validate()
         if user_validation_error:
             abort(500,

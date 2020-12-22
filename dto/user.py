@@ -64,3 +64,8 @@ class User:
             if address_validation_error:
                 return "Address data is invalid. " + address_validation_error
         return None
+
+    def isCourer(self):
+        if type(self.is_courier) is not bool:
+            raise Exception("The \"is_courier\" flag is invalid.")
+        return self.is_courier

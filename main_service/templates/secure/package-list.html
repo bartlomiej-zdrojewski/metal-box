@@ -37,11 +37,12 @@
                     <td>{{package.serial_number}}</td>
                     <td>{{package.register_date}}</td>
                     <td>{{package.status}}</td>
-                    <td><a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="downloadPackageDocument(this)">Pobierz</a>
-                    {% if package.is_deletable %}
-                    <span> / </span>
-                    <a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="deletePackage(this)">Usuń</a></td>
-                    {% endif %}
+                    <td>
+                        <a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="downloadPackageDocument(this)">Pobierz</a>
+                        {% if package.is_deletable %}
+                        <span> / </span>
+                        <a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="deletePackage(this)">Usuń</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

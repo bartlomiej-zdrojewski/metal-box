@@ -30,8 +30,8 @@ class Api:
                   "(login: {}).".format(login))
         package_list = []
         user_id = self.getUserIdFromLogin(login)
-        for package_id in self.db.hkeys(PACKAGE_ID_TO_USER_ID_MAP):
-            if user_id == self.db.hget(PACKAGE_ID_TO_USER_ID_MAP, package_id):
+        for package_id in self.db.hkeys(PACKAGE_ID_TO_SENDER_ID_MAP):
+            if user_id == self.db.hget(PACKAGE_ID_TO_SENDER_ID_MAP, package_id):
                 if not self.db.exists(package_id):
                     abort(500,
                           "Could not fetch package list. One of the packages "
@@ -71,8 +71,8 @@ class Api:
                 abort(500,
                       "Failed to destroy session (id: {}).".format(session_id))
             return None
-        session_expiration_date = datetime.utcnow(
-        ) + timedelta(seconds=SESSION_EXPIRATION_TIME)
+        session_expiration_date = datetime.utcnow() + \
+            timedelta(seconds=SESSION_EXPIRATION_TIME)
         self.db.hset(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP,
                      session_id, session_expiration_date.isoformat())
         user_login = self.db.hget(SESSION_ID_TO_USER_LOGIN_MAP, session_id)

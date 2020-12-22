@@ -13,6 +13,7 @@ app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = SESSION_EXPIRATION_TIME
 jwt = JWTManager(app)
 api = Api()
+
 CORS(app, origins=[
     MAIN_SERVICE_ORIGIN,
     COURIER_SERVICE_ORIGIN],
@@ -30,7 +31,10 @@ def homePage():
 def loginRequest():
     request_error = validateLoginRequest(request)
     if request_error:
-        return jsonify(error_message=request_error), 401
+        # TODO fix supports_credentials
+        response = make_response(jsonify(error_message=request_error), 401)
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
     login = request.form.get("login")
     session_id, expiration_date = api.createSession(login)
     access_token = create_access_token(identity=login)
@@ -49,12 +53,23 @@ def loginRequest():
 def logoutRequest():
     session_id = request.cookies.get(SESSION_ID_KEY)
     if not session_id:
-        return jsonify(error_message="Session id must not be empty."), 400
+        # TODO fix supports_credentials
+        response = make_response(
+            jsonify(error_message="Session id must not be empty."), 400)
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
     if not api.validateSession(session_id):
-        return jsonify(error_message="Session is invalid."), 400
+        # TODO fix supports_credentials
+        response = make_response(
+            jsonify(error_message="Session is invalid."), 400)
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
     if not api.destroySession(session_id):
-        return jsonify(error_message="Failed to destroy session "
-                       "(id: {}).".format(session_id)), 500
+        # TODO fix supports_credentials
+        response = make_response(jsonify(error_message="Failed to destroy session "
+                                         "(id: {}).".format(session_id)), 500)
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
     response = jsonify(redirect_url="/login")
     response.set_cookie(SESSION_ID_KEY, "", expires=0,
                         secure=True, httponly=True)
@@ -70,7 +85,10 @@ def logoutRequest():
 def registerRequest():
     request_error = validateRegisterRequest(request)
     if request_error:
-        return jsonify(error_message=request_error), 400
+        # TODO fix supports_credentials
+        response = make_response(jsonify(error_message=request_error), 400)
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
     api.registerUserFromRequest(request)
     # TODO fix supports_credentials
     response = make_response("Created", 201)
@@ -92,6 +110,7 @@ def userRequest(login):
     return response
 
 
+# TODO handle courier, currently throws 403
 def validateLoginRequest(request):
     login = request.form.get("login")
     password = request.form.get("password")
@@ -106,11 +125,15 @@ def validateLoginRequest(request):
     return None
 
 
-# TODO allow to register couriers
 def validateRegisterRequest(request):
     login = request.form.get("login")
     password = request.form.get("password")
     password_repeat = request.form.get("password_repeat")
+    # TODO case insensitive
+    if request.form.get("is_courier") != "true":
+        is_courier = False
+    else:
+        is_courier = True
     if not login:
         return "Login must not be empty."
     if not password:
@@ -132,22 +155,30 @@ def validateRegisterRequest(request):
                "special characters (!@#$%&*)."
     if password != password_repeat:
         return "Password repeat does not match the original password."
-    person = Person(
-        request.form.get("name"),
-        request.form.get("surname"),
-        request.form.get("birthdate"),
-        request.form.get("pesel"))
-    person_validation_error = person.validate()
-    if person_validation_error:
-        return "Personal data is invalid. {}".format(person_validation_error)
-    address = Address(
-        request.form.get("street"),
-        request.form.get("building_number"),
-        request.form.get("apartment_number"),
-        request.form.get("postal_code"),
-        request.form.get("city"),
-        request.form.get("country"))
-    address_validation_error = address.validate()
-    if address_validation_error:
-        return "Address data is invalid. {}".format(address_validation_error)
+    if is_courier:
+        person = Person(
+            request.form.get("name"),
+            request.form.get("surname"))
+        person_validation_error = person.validate(False)
+        if person_validation_error:
+            return "Personal data is invalid. {}".format(person_validation_error)
+    else:
+        person = Person(
+            request.form.get("name"),
+            request.form.get("surname"),
+            request.form.get("birthdate"),
+            request.form.get("pesel"))
+        person_validation_error = person.validate()
+        if person_validation_error:
+            return "Personal data is invalid. {}".format(person_validation_error)
+        address = Address(
+            request.form.get("street"),
+            request.form.get("building_number"),
+            request.form.get("apartment_number"),
+            request.form.get("postal_code"),
+            request.form.get("city"),
+            request.form.get("country"))
+        address_validation_error = address.validate()
+        if address_validation_error:
+            return "Address data is invalid. {}".format(address_validation_error)
     return None

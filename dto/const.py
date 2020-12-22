@@ -1,5 +1,6 @@
 GET = "GET"
 POST = "POST"
+PUT = "PUT"
 DELETE = "DELETE"
 
 SESSION_ID_KEY = "session-id"
@@ -14,7 +15,8 @@ PACKAGE_PREFIX = "package_"
 SESSION_ID_TO_USER_LOGIN_MAP = "session_id_to_user_login_map"
 SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP = \
     "session_id_to_session_expiration_date_map"
-PACKAGE_ID_TO_USER_ID_MAP = "package_id_to_user_id_map"
+PACKAGE_ID_TO_SENDER_ID_MAP = "package_id_to_sender_id_map"
+PACKAGE_ID_TO_COURIER_ID_MAP = "package_id_to_courier_id_map"
 
 MAIN_SERVICE_ORIGIN = "https://localhost:8080"
 COURIER_SERVICE_ORIGIN = "https://localhost:8081"

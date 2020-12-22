@@ -1,3 +1,5 @@
+# TODO rename to "package_service"
+
 import re
 import os
 from flask import Flask, request, jsonify, send_file
@@ -10,8 +12,9 @@ from dto.person import *
 
 app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
-api = Api()
 jwt = JWTManager(app)
+api = Api()
+
 CORS(app, origins=[
     MAIN_SERVICE_ORIGIN,
     COURIER_SERVICE_ORIGIN],
@@ -51,6 +54,27 @@ def packageRegisterRequest():
     return "Created", 201
 
 
+@app.route("/api/package/<serial_number>/receive", methods=[PUT])
+@jwt_required
+@cross_origin()
+def packageReceiveFromSenderRequest(serial_number):
+    if not api.doesPackageExist(serial_number):
+        return jsonify(error_message="Package does not exists "
+                       "(serial_number: {}).".format(serial_number)), 404
+    package_status = api.getPackageStatus(serial_number)
+    if package_status != PACKAGE_STATUS_NEW:
+        return jsonify(error_message="Package is not new (serial_number: {}, "
+                       "status: {}).".format(serial_number,
+                                             package_status)), 400
+    login = get_jwt_identity()
+    if not api.isUserCourier(login):
+        return jsonify(error_message="User is not a courier "
+                       "(login: {}).".format(serial_number,
+                                             package_status)), 403
+    api.receivePackageFromSender(login, serial_number)
+    return "OK", 200
+
+
 @app.route("/api/package/<serial_number>", methods=[DELETE])
 @jwt_required
 @cross_origin()
@@ -60,8 +84,9 @@ def packageDeleteRequest(serial_number):
                        "(serial_number: {}).".format(serial_number)), 404
     package_status = api.getPackageStatus(serial_number)
     if package_status != PACKAGE_STATUS_NEW:
-        return jsonify(error_message="Package must be new (serial_number: {}, "
-                       "status: {}).".format(serial_number, package_status)), 403
+        return jsonify(error_message="Package is not new (serial_number: {}, "
+                       "status: {}).".format(serial_number,
+                                             package_status)), 400
     login = get_jwt_identity()
     if not api.validateUserAccessToPackage(login, serial_number):
         return jsonify(error_message="User does not have access to the package "
@@ -99,8 +124,7 @@ def validatePackageRegisterRequest(request):
         return "Sender's phone number must consist of exactly 9 digits."
     receiver = Person(
         request.form.get("receiver_name"),
-        request.form.get("receiver_surname")
-    )
+        request.form.get("receiver_surname"))
     receiver_validation_error = receiver.validate(False)
     if receiver_validation_error:
         return "Receiver's personal data is invalid. " \
@@ -111,8 +135,7 @@ def validatePackageRegisterRequest(request):
         request.form.get("receiver_apartment_number"),
         request.form.get("receiver_postal_code"),
         request.form.get("receiver_city"),
-        request.form.get("receiver_country")
-    )
+        request.form.get("receiver_country"))
     receiver_address_validation_error = receiver_address.validate()
     if receiver_address_validation_error:
         return "Receiver's address data is invalid. " \
