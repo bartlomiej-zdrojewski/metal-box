@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         isRegistering = true;
         setButtonRegisterEnabled(false);
         setSpan(BUTTON_REGISTER_ID, "Rejestrowanie...");
-        let url = API_URL + "/register";
+        let url = API_URL + "/user/register";
         // TODO refactor
         fd = new FormData()
         fd.append("login", getInputValue("login"));
@@ -373,7 +373,6 @@ document.addEventListener('DOMContentLoaded', function (event) {
         let params = {
             method: POST,
             body: fd,
-            credentials: "include",
             redirect: "follow"
         };
         fetch(url, params)

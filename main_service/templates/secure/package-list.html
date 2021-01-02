@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg" href="/images/logo.svg">
     <link href="/styles/main.css" rel="stylesheet" type="text/css" />
     <link href="/styles/table.css" rel="stylesheet" type="text/css" />
+    <script src="/scripts/package-service.js"></script>
     <script src="/scripts/package-list.js"></script>
 </head>
 
@@ -24,33 +25,18 @@
     </nav>
     <section>
         <h3>Lista paczek</h3>
-        <table>
-            <tbody>
+        <table class="package-list-table">
+            <thead>
                 <tr>
                     <td>Numer seryjny</td>
                     <td>Data zarejestrowania</td>
                     <td>Status</td>
                     <td>Zarządzanie</td>
                 </tr>
-                {% for package in package_list %}
-                <tr>
-                    <td>{{package.serial_number}}</td>
-                    <td>{{package.register_date}}</td>
-                    <td>{{package.status}}</td>
-                    <td>
-                        <a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="downloadPackageDocument(this)">Pobierz</a>
-                        {% if package.is_deletable %}
-                        <span> / </span>
-                        <a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}" onclick="deletePackage(this)">Usuń</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+            </thead>
+            <tbody></tbody>
+            <tfoot></tfoot>
         </table>
-        <p class="no-horizontal-padding">
-            Łącznie {{package_count}} paczek.
-        </p>
     </section>
     <footer>
         <p class="footer-inline left">

@@ -1,7 +1,3 @@
-fpdf
-python-dateutil
 pyopenssl
-fpdf
-redis
 flask
 flask-jwt-extended

@@ -36,17 +36,17 @@ class Address:
 
     def validate(self):
         if not self.street:
-            return "Street must not be empty."
+            return "The street must not be empty."
         if not self.building_number:
-            return "Building number must not be empty."
+            return "The building number must not be empty."
         if not self.apartment_number:
-            return "Apartment number must not be empty."
+            return "The apartment number must not be empty."
         if not self.city:
-            return "City must not be empty."
+            return "The city must not be empty."
         if not self.postal_code:
-            return "Postal code must not be empty."
+            return "the postal code must not be empty."
         if not self.country:
-            return "Country must not be empty."
+            return "The country must not be empty."
         if not re.search("^\d{2}-\d{3}$", self.postal_code):
-            return "Postal code must match the XX-YYY format."
+            return "The postal code must match the XX-YYY format."
         return None

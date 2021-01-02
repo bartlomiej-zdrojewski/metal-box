@@ -1,1 +1,0 @@
-16. Zasadne jest przygotowanie Swagger-a, który będzie umożliwiał wykonanie wszystkich kroków bez bezpośredniego korzystania z interfejsu przygotowywanych stron.

@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         isLogging = true;
         setButtonLoginEnabled(false);
         setSpan(BUTTON_LOGIN_ID, "Logowanie...");
-        let url = API_URL + "/login";
+        let url = API_URL + "/user/login";
         let params = {
             method: POST,
             body: new FormData(form),

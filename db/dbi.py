@@ -7,14 +7,14 @@ from Crypto.Random import get_random_bytes
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Hash import SHA256
 from flask import abort
-from dto.const import *
-from dto.address import *
-from dto.user import *
-from dto.package import *
-from dto.person import *
+from db.const import *
+from db.address import *
+from db.user import *
+from db.package import *
+from db.person import *
 
 
-class Api:
+class DatabaseInterface:
 
     def __init__(self):
         self.db = redis.Redis(host="redis_db", port=6379,
@@ -24,9 +24,16 @@ class Api:
                 get_random_bytes(16)).decode())
         self.salt = base64.b64decode(self.db.get(SALT_KEY))
 
+    def getDatabase(self):
+        return self.db
+
     def hashPassword(self, password):
         return base64.b64encode(PBKDF2(password, self.salt, 16, count=1000,
                                        hmac_hash_module=SHA256)).decode()
+
+    #
+    # USER SECTION
+    #
 
     def getUserIdFromLogin(self, login):
         return USER_PREFIX + login
@@ -36,66 +43,59 @@ class Api:
             return False
         return self.db.exists(self.getUserIdFromLogin(login))
 
+    def getUser(self, login):
+        if not self.doesUserExist(login):
+            abort(500, "Could not get the user. The user does not exists "
+                  "(login: {}).".format(login))
+        user_id = self.getUserIdFromLogin(login)
+        return User.loadFromData(self.db.get(user_id))
+
+    def isUserCourier(self, login):
+        return self.getUser(login).isCourer()
+
     def validateUser(self, login, password):
         if not self.doesUserExist(login):
             return False
-        user = User.loadFromData(self.db.get(self.getUserIdFromLogin(login)))
+        user = self.getUser(login)
         password_hash = self.hashPassword(password)
         if password_hash != user.password_hash:
             return False
         return True
 
-    def registerUserFromRequest(self, request):
-        login = request.form.get("login")
-        password = request.form.get("password")
-        # TODO case insensitive
-        if request.form.get("is_courier") != "true":
-            is_courier = False
-        else:
-            is_courier = True
-        if not login:
+    #
+    # PACKAGE SECTION
+    #
+
+    def getPackageIdFromSerialNumber(self, serial_number):
+        return PACKAGE_PREFIX + serial_number
+
+    def doesPackageExist(self, serial_number):
+        if not serial_number:
+            return False
+        return self.db.exists(self.getPackageIdFromSerialNumber(serial_number))
+
+    def getPackage(self, serial_number):
+        if not self.doesPackageExist(serial_number):
             abort(500,
-                  "Could not register user. Login must not be empty.")
-        if not password:
-            abort(500,
-                  "Could not register user. Password must not be empty.")
-        if self.doesUserExist(login):
-            abort(500,
-                  "Could not register user. User already exists "
-                  "(login: {}).".format(login))
-        person = Person(
-            request.form.get("name"),
-            request.form.get("surname"),
-            request.form.get("birthdate"),
-            request.form.get("pesel"))
-        address = Address(
-            request.form.get("street"),
-            request.form.get("building_number"),
-            request.form.get("apartment_number"),
-            request.form.get("postal_code"),
-            request.form.get("city"),
-            request.form.get("country"))
-        user = User(
-            self.getUserIdFromLogin(login),
-            login,
-            self.hashPassword(password),
-            person,
-            address,
-            is_courier)
-        user_validation_error = user.validate()
-        if user_validation_error:
-            abort(500,
-                  "Could not register user. User is invalid. "
-                  "{}".format(user_validation_error))
-        self.db.set(user.id, user.toData())
+                  "Could not get the package. The package does not exist "
+                  "(serial_number: {}).".format(serial_number))
+        package_id = self.getPackageIdFromSerialNumber(serial_number)
+        return Package.loadFromData(self.db.get(package_id))
+
+    def getPackageStatus(self, serial_number):
+        return self.getPackage(serial_number).status
+
+    #
+    # SESSION SECTION
+    #
 
     def createSession(self, login):
         if not login:
             abort(500,
-                  "Could not create session. Login must not be empty.")
+                  "Could not create a session. The login must not be empty.")
         if not self.doesUserExist(login):
             abort(500,
-                  "Could not create session. User does not exist "
+                  "Could not create a session. The user does not exist "
                   "(login: {}).".format(login))
         session_id = str(uuid.uuid4()).replace("-", "")
         session_expiration_date = datetime.utcnow(
@@ -113,14 +113,15 @@ class Api:
         if not self.db.hexists(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP,
                                session_id):
             abort(500,
-                  "No expiration date match the session id: "
-                  "{}.".format(session_id))
+                  "Could not validate the session. No expiration date match "
+                  "the session ID: {}.".format(session_id))
         session_expiration_date = dateutil.parser.parse(self.db.hget(
             SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP, session_id))
         if session_expiration_date <= datetime.utcnow():
             if not self.destroySession(session_id):
                 abort(500,
-                      "Failed to destroy session (id: {}).".format(session_id))
+                      "Failed to destroy the session (ID: {}).".format(
+                          session_id))
             return None
         session_expiration_date = datetime.utcnow(
         ) + timedelta(seconds=SESSION_EXPIRATION_TIME)
@@ -135,8 +136,8 @@ class Api:
         if not self.db.hexists(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP,
                                session_id):
             abort(500,
-                  "No expiration date match the session id: "
-                  "{}.".format(session_id))
+                  "Could not validate the session. No expiration date match "
+                  "the session ID: {}.".format(session_id))
         self.db.hdel(SESSION_ID_TO_USER_LOGIN_MAP, session_id)
         self.db.hdel(SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP, session_id)
         return True

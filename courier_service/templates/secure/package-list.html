@@ -34,7 +34,7 @@
     </nav>
     <div class="container mt-3 mb-3">
         <h3 class="mb-3">Lista paczek</h3>
-        <table class="table table-responsive">
+        <table class="table table-responsive package-list-table">
             <thead>
                 <tr>
                     <th scope="col">Numer seryjny</td>
@@ -43,21 +43,12 @@
                     <th scope="col">Zarządzanie</td>
                 </tr>
             </thead>
-            <tbody>
-                {% for package in package_list %}
-                <tr>
-                    <td>{{package.serial_number}}</td>
-                    <td>{{package.register_date}}</td>
-                    <td>{{package.status}}</td>
-                    <td><a href="#" package-serial-number="{{package.serial_number}}" package-url="{{package.url}}"
-                            onclick="downloadPackageDocument(this)">Pobierz</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+            <tbody></tbody>
+            <tfoot></tfoot>
         </table>
     </div>
 
+    <script src="/scripts/package-service.js"></script>
     <script src="/scripts/package-list.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"

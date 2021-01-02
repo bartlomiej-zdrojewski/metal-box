@@ -1,6 +1,6 @@
 import json
-from dto.address import *
-from dto.person import *
+from db.address import *
+from db.person import *
 
 
 class User:
@@ -41,28 +41,31 @@ class User:
 
     def validate(self, strictMode=True):
         if not self.id:
-            return "ID must not be empty."
+            return "The ID must not be empty."
         if not self.login:
-            return "Login must not be empty."
+            return "The login must not be empty."
         if not self.password_hash:
-            return "Password hash must not be empty."
+            return "The password hash must not be empty."
         if not self.person:
-            return "Personal data must not be empty."
+            return "The personal data must not be empty."
         if not self.address:
-            return "Address data must not be empty."
+            return "The address data must not be empty."
         if type(self.is_courier) is not bool:
             return "The \"is_courier\" flag is invalid."
         if self.is_courier:
             person_validation_error = self.person.validate(False)
             if person_validation_error:
-                return "Personal data is invalid. " + person_validation_error
+                return "The personal data is invalid. {}".format(
+                    person_validation_error)
         else:
             person_validation_error = self.person.validate(strictMode)
             if person_validation_error:
-                return "Personal data is invalid. " + person_validation_error
+                return "The personal data is invalid. {}".format(
+                    person_validation_error)
             address_validation_error = self.address.validate()
             if address_validation_error:
-                return "Address data is invalid. " + address_validation_error
+                return "The address data is invalid. {}".format(
+                    address_validation_error)
         return None
 
     def isCourer(self):

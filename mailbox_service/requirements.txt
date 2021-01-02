@@ -1,4 +1,2 @@
 pyopenssl
-fpdf
-redis
 flask

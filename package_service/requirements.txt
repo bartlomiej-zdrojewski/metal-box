@@ -1,6 +1,6 @@
 pyopenssl
-fpdf
-redis
 flask
 flask-jwt-extended
 flask-cors
+flask-restplus
+Werkzeug==0.16.1

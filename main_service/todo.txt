@@ -1,2 +1,0 @@
-12. Listy paczek (w dotychczasowej aplikacji; w paczkomacie; w aplikacji kuriera) mają być pobierane fragmentami i wyświetlane z paginacją (możliwością wyświetlania kolejnego fragmentu listy).
-13. Punkt 12. ma być wykonany zgodnie z 3. poziomem dojrzałości Richardsona.

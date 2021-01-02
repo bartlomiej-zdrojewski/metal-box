@@ -1,19 +1,18 @@
 import os
 from flask import Flask, request, url_for, abort, redirect, make_response, render_template
 from flask_jwt_extended import JWTManager, create_access_token
-from api import *
-from dto.const import *
+from db.dbi import *
 
 app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = SESSION_EXPIRATION_TIME
 jwt = JWTManager(app)
-api = Api()
+dbi = DatabaseInterface()
 
 
 @app.route("/",  methods=[GET])
 def homePage():
-    return redirect(url_for('loginPage'))
+    return redirect(url_for("loginPage"))
 
 
 @app.route("/login", methods=[GET])
@@ -28,18 +27,12 @@ def registerPage():
 
 @app.route("/secure", methods=[GET])
 def securePage():
-    return redirect(url_for('packageListPage'))
+    return redirect(url_for("packageListPage"))
 
 
 @app.route("/secure/package/list", methods=[GET])
 def packageListPage():
-    user_login = request.environ["secure_user_login"]
-    package_list = api.fetchCourierPackageList(user_login)
-    return make_response(render_template(
-        "secure/package-list.html",
-        package_list=package_list,
-        package_count=len(package_list)
-    ))
+    return make_response(render_template("secure/package-list.html"))
 
 
 @app.route("/secure/package/receive", methods=[GET])
@@ -56,19 +49,19 @@ def logoutPage():
 def before_request():
     if request.path.startswith("/secure"):
         session_id = request.cookies.get(SESSION_ID_KEY)
-        validation_result = api.validateSession(session_id)
+        validation_result = dbi.validateSession(session_id)
         if not validation_result:
             request.environ["secure_session_id"] = session_id
             request.environ["secure_session_valid"] = False
             abort(401)
-        if not api.isUserCourier(validation_result[1]):
+        request.environ["secure_user_login"] = validation_result[1]
+        if not dbi.isUserCourier(request.environ["secure_user_login"]):
             request.environ["secure_session_id"] = session_id
             request.environ["secure_session_valid"] = False
             abort(403)
         request.environ["secure_session_id"] = session_id
         request.environ["secure_session_valid"] = True
         request.environ["secure_session_expiration_date"] = validation_result[0]
-        request.environ["secure_user_login"] = validation_result[1]
 
 
 @app.after_request

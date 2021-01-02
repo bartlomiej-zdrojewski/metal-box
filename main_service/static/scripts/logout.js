@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function (event) {
     const STATUS_ID = "status";
 
-    const GET = "GET";
+    const POST = "POST";
     const HTTP_STATUS = {
         OK: 200,
         BAD_REQUEST: 400
@@ -49,9 +49,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
     }
 
     function logout() {
-        let url = API_URL + "/logout";
+        let url = API_URL + "/user/logout";
         let params = {
-            method: GET,
+            method: POST,
             credentials: "include",
             redirect: "follow"
         };

@@ -2,9 +2,9 @@ import re
 import json
 import os.path
 from fpdf import FPDF
-from dto.const import *
-from dto.address import *
-from dto.person import *
+from db.const import *
+from db.address import *
+from db.person import *
 
 
 class Package:
@@ -67,49 +67,49 @@ class Package:
 
     def validate(self):
         if not self.id:
-            return "ID must not be empty."
+            return "The ID must not be empty."
         if not self.serial_number:
-            return "Serial number must not be empty."
+            return "The serial number must not be empty."
         if not self.register_date:
-            return "Register date must not be empty."
+            return "The register date must not be empty."
         if not self.image_file_path:
-            return "Image file path must not be empty."
+            return "The image file path must not be empty."
         if not self.sender:
-            return "Sender's personal data must not be empty."
+            return "The sender's personal data must not be empty."
         if not self.sender_address:
-            return "Sender's address must not be empty."
+            return "The sender's address must not be empty."
         if not self.sender_phone_number:
-            return "Sender's phone number must not be empty."
+            return "The sender's phone number must not be empty."
         if not self.receiver:
-            return "Receiver's personal data  must not be empty."
+            return "The receiver's personal data  must not be empty."
         if not self.receiver_address:
-            return "Receiver's address must not be empty."
+            return "The receiver's address must not be empty."
         if not self.receiver_phone_number:
-            return "Receiver's phone number must not be empty."
+            return "The receiver's phone number must not be empty."
         if not self.status:
-            return "Status must not be empty."
+            return "The status must not be empty."
         sender_validation_error = self.sender.validate(False)
         if sender_validation_error:
-            return "Sender's personal data is invalid. " \
+            return "The sender's personal data is invalid. " \
                 "{}".format(sender_validation_error)
         sender_address_validation_error = self.sender.validate(False)
         if sender_address_validation_error:
-            return "Sender's address data is invalid. " \
+            return "The sender's address data is invalid. " \
                 "{}".format(sender_address_validation_error)
         if not re.search("^\d{9}$", self.sender_phone_number):
-            return "Sender's phone number must consist of exactly 9 digits."
+            return "The sender's phone number must consist of exactly 9 digits."
         receiver_validation_error = self.sender.validate(False)
         if receiver_validation_error:
-            return "Receiver's personal data is invalid. " \
+            return "The receiver's personal data is invalid. " \
                 "{}".format(receiver_validation_error)
         receiver_address_validation_error = self.sender.validate(False)
         if receiver_address_validation_error:
-            return "Receiver's address data is invalid. " \
+            return "The receiver's address data is invalid. " \
                 "{}".format(receiver_address_validation_error)
         if not re.search("^\d{9}$", self.receiver_phone_number):
-            return "Receiver's phone number must consist of exactly 9 digits."
+            return "The receiver's phone number must consist of exactly 9 digits."
         if self.status not in PACKAGE_STATUS_LIST:
-            return "Status is invalid: {}.".format(self.status)
+            return "The status is invalid: {}.".format(self.status)
         return None
 
     def getStatus(self):
@@ -136,8 +136,8 @@ class Package:
         validation_error = self.validate()
         if validation_error:
             raise Exception(
-                "Could not generate package document. Package is invalid. "
-                "{}".format(validation_error))
+                "Could not generate a package document. The package is "
+                "invalid. {}".format(validation_error))
         document_file_path = "{}package_{}.pdf".format(
             DOCUMENT_FILES_DIRECTORY, self.serial_number)
         pdf = FPDF()
@@ -147,9 +147,9 @@ class Package:
         self.__add_image_to_pdf(pdf)
         pdf.output(document_file_path)
         if not os.path.isfile(document_file_path):
-            raise Exception("Could not generate package document "
+            raise Exception("Could not generate a package document "
                             "(package_serial_number: {}). "
-                            "Saving document file failed.").format(
+                            "Saving the document failed.").format(
                 self.serial_number)
         self.document_file_path = document_file_path
         return document_file_path
@@ -182,8 +182,8 @@ class Package:
 
     def __add_image_to_pdf(self, pdf):
         if not os.path.isfile(self.image_file_path):
-            raise Exception("Could not generate package document "
-                            "(package_serial_number: {}). Image file "
+            raise Exception("Could not generate a package document "
+                            "(package_serial_number: {}). The image file "
                             "does not exist.").format(self.serial_number)
         image_width = 0.75 * (pdf.w - pdf.l_margin - pdf.r_margin)
         pdf.image(self.image_file_path, w=image_width)

@@ -1,9 +1,7 @@
 from flask import Flask
-from api import *
-from dto.const import *
+from db.const import *
 
 app = Flask(__name__, static_url_path="")
-api = Api()
 
 
 @app.route("/",  methods=[GET])

@@ -389,11 +389,10 @@ document.addEventListener('DOMContentLoaded', function (event) {
         isRegistering = true;
         setButtonRegisterEnabled(false);
         setSpan(BUTTON_REGISTER_ID, "Rejestrowanie...");
-        let url = API_URL + "/register";
+        let url = API_URL + "/user/register";
         let params = {
             method: POST,
             body: new FormData(form),
-            credentials: "include",
             redirect: "follow"
         };
         fetch(url, params)

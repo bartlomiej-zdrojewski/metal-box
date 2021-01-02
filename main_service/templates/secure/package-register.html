@@ -31,31 +31,31 @@
                 </legend>
                 <p>
                     <label for="sender_name">Imię</label>
-                    <input id="sender_name" type="text" name="sender_name" />
+                    <input id="sender_name" type="text" name="sender_name" value="{{user.person.name}}" />
                 </p>
                 <p>
                     <label for="sender_surname">Nazwisko</label>
-                    <input id="sender_surname" type="text" name="sender_surname" />
+                    <input id="sender_surname" type="text" name="sender_surname" value="{{user.person.surname}}" />
                 </p>
                 <p>
                     <label for="sender_street">Ulica</label>
-                    <input id="sender_street" type="text" name="sender_street" />
+                    <input id="sender_street" type="text" name="sender_street" value="{{user.address.street if user.address.street != None}}" />
                 </p>
                 <p>
                     <label for="sender_apartment_number">Numer mieszkania</label>
-                    <input id="sender_apartment_number" type="text" name="sender_apartment_number" />
+                    <input id="sender_apartment_number" type="text" name="sender_apartment_number" value="{{user.address.apartment_number if user.address.apartment_number != None}}" />
                 </p>
                 <p>
                     <label for="sender_city">Miejscowość</label>
-                    <input id="sender_city" type="text" name="sender_city" />
+                    <input id="sender_city" type="text" name="sender_city" value="{{user.address.city if user.address.city != None}}" />
                 </p>
                 <p>
                     <label for="sender_postal_code">Kod pocztowy</label>
-                    <input id="sender_postal_code" type="text" name="sender_postal_code" />
+                    <input id="sender_postal_code" type="text" name="sender_postal_code" value="{{user.address.postal_code if user.address.postal_code != None}}" />
                 </p>
                 <p>
                     <label for="sender_country">Kraj</label>
-                    <input id="sender_country" type="text" name="sender_country" />
+                    <input id="sender_country" type="text" name="sender_country" value="{{user.address.country if user.address.country != None}}" />
                 </p>
                 <p>
                     <label for="sender_phone_number">Numer telefonu</label>
