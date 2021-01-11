@@ -19,6 +19,7 @@ services:
     volumes:
       - ./main_service:/main_service
       - ./db:/main_service/db
+      - ./js:/main_service/static/scripts/common
     env_file:
       - variables.env
   courier_service:
@@ -33,6 +34,7 @@ services:
     volumes:
       - ./courier_service:/courier_service
       - ./db:/courier_service/db
+      - ./js:/courier_service/static/scripts/common
     env_file:
       - variables.env
   mailbox_service:

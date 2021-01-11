@@ -23,10 +23,10 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/secure/package/list">Lista paczek</a>
                 </li>
-                <li class="nav-item active">
+                <li class="nav-item">
                     <a class="nav-link" href="/secure/package/receive">Odbierz paczkę</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="/secure/mailbox/token">Wygeneruj żeton</a>
                 </li>
                 <li class="nav-item">
@@ -36,19 +36,22 @@
         </div>
     </nav>
     <div class="container mt-3 mb-3">
-        <h3 class="mb-3">Odbieranie paczki</h3>
-        <form id="form_receive_package">
+        <h3 class="mb-3">Generowanie żetonu paczkomatu</h3>
+        <form id="form_generate_mailbox_token">
             <div class="form-group">
-                <label for="serial_number">Numer seryjny</label>
-                <input id="serial_number" class="form-control" type="text" />
+                <label for="serial_number">Paczkomat</label>
+                <select id="mailbox_code" class="form-control">
+                </select>
             </div>
-            <div class="form-group">
-                <button id="button_receive_package" class="btn btn-primary" type="submit">Odbierz paczkę</button>
+            <div class="form-group row justify-content-center">
+                <button id="submit_button" class="btn btn-primary" type="submit">Wygeneruj żeton paczkomatu</button>
             </div>
         </form>
     </div>
 
-    <script src="/scripts/form-receive-package.js"></script>
+    <script src="/scripts/common/authorization-service.js"></script>
+    <script src="/scripts/common/mailbox-service.js"></script>
+    <script src="/scripts/form-generate-mailbox-token.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
         crossorigin="anonymous"></script>

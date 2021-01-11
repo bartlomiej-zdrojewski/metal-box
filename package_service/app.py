@@ -1,3 +1,5 @@
+# TODO move mailbox related endpoints to mailbox service?
+
 import math
 import os
 from flask import Flask, request, jsonify, send_file, abort
@@ -34,7 +36,7 @@ mailbox_namespace = api.namespace(
     path="/api/mailbox",
     description="Mailbox Service API")
 
-# TODO socket_io.run(app) ?
+# TODO use socket_io.run(app)? will https still work?
 
 
 #
@@ -579,9 +581,10 @@ class MailboxListResource(Resource):
     @api.doc(responses={200: "OK"})
     def get(self):
         """ Returns a list of mailboxes. """
-        # TODO
-        mailboxes = dbi.getDatabase().keys("mailbox_*")
-        return jsonify(mailboxes), 200
+        mailbox_list = dbi.getMailboxList()
+        return {
+            "mailbox_list": mailbox_list,
+            "mailbox_count": len(mailbox_list)}, 200
 
     @cross_origin()
     @api.expect(create_mailbox_form_model)
@@ -615,6 +618,7 @@ class MailboxListResource(Resource):
                   "Could not register the mailbox. The mailbox is invalid. "
                   "{}".format(mailbox_validation_error))
         dbi.getDatabase().set(mailbox.id, mailbox.toData())
+        dbi.getDatabase().rpush(MAILBOX_CODE_LIST, mailbox.code)
 
 
 @api.param("code", "A mailbox code.", required=True)

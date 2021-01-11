@@ -106,8 +106,17 @@ class DatabaseInterface:
             abort(500,
                   "Could not get the mailbox. The mailbox does not exist "
                   "(code: {}).".format(code))
-        mailbox_id = self.getPackageIdFromSerialNumber(code)
+        mailbox_id = self.getMailboxIdFromCode(code)
         return Mailbox.loadFromData(self.db.get(mailbox_id))
+
+    def getMailboxList(self):
+        mailbox_list = []
+        for mailbox_code in self.db.lrange(MAILBOX_CODE_LIST, 0, -1):
+            mailbox = self.getMailbox(mailbox_code)
+            mailbox_list.append({
+                "code": mailbox.code,
+                "description": mailbox.description})
+        return mailbox_list
 
     #
     # SESSION SECTION

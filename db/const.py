@@ -14,6 +14,8 @@ USER_PREFIX = "user_"
 PACKAGE_PREFIX = "package_"
 MAILBOX_PREFIX = "mailbox_"
 
+MAILBOX_CODE_LIST = "mailbox_code_list"
+
 SESSION_ID_TO_USER_LOGIN_MAP = "session_id_to_user_login_map"
 SESSION_ID_TO_SESSION_EXPIRATION_DATE_MAP = \
     "session_id_to_session_expiration_date_map"

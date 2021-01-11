@@ -40,6 +40,11 @@ def packageRegisterPage():
     return make_response(render_template("secure/package-receive.html"))
 
 
+@app.route("/secure/mailbox/token", methods=[GET])
+def mailboxTokenPage():
+    return make_response(render_template("secure/mailbox-token.html"))
+
+
 @app.route("/secure/logout", methods=[GET])
 def logoutPage():
     return make_response(render_template("secure/logout.html"))

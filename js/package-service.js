@@ -1,3 +1,5 @@
+// TODO use API_URL
+
 const Package = {
     onDownloadDocument: function (element) {
         package_url = element.attributes["package-url"].value;
@@ -89,7 +91,7 @@ const PackageList = {
             } else {
                 pageUrl += "&page_index=" + page_index;
             }
-        }            
+        }
         if (typeof page_size !== 'undefined') {
             if (isFirstParameter) {
                 pageUrl += "?page_size=" + page_size;
