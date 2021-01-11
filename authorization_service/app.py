@@ -1,3 +1,5 @@
+# TODO refactor
+
 import re
 from flask import Flask, request, jsonify, abort
 from flask_jwt_extended import JWTManager, create_access_token
@@ -24,6 +26,7 @@ user_namespace = api.namespace(
     description="Authorization Service API")
 
 
+@api.param("login", "A user login.", required=True)
 @user_namespace.route("/<login>")
 class UserResource(Resource):
 
@@ -65,9 +68,11 @@ class LoginResource(Resource):
         access_token = create_access_token(identity=login)
         response = jsonify(redirect_url="/secure")
         response.set_cookie(SESSION_ID_KEY, session_id,
-                            expires=expiration_date, secure=True, httponly=True)
+                            expires=expiration_date,
+                            secure=True, httponly=True)
         response.set_cookie(JWT_TOKEN_KEY, access_token,
-                            expires=expiration_date, secure=True, httponly=False)
+                            expires=expiration_date,
+                            secure=True, httponly=False)
         return response, 200
 
     def __validateLoginRequest(self, request):
@@ -95,17 +100,17 @@ class LogoutResource(Resource):
 
     @cross_origin(supports_credentials=True)
     @api.doc(responses={200: "OK",
-                        400: "Bad Request, {error_message: string}"})
+                        401: "Unauthorized, {error_message: string}"})
     def post(self):
         """ Logs out a user. """
         session_id = request.cookies.get(SESSION_ID_KEY)
         if not session_id:
             return jsonify(error_message="The session ID must not "
-                           "be empty."), 400
+                           "be empty."), 401
         if not dbi.validateSession(session_id):
-            return jsonify(error_message="The session is invalid."), 400
+            return jsonify(error_message="The session is invalid."), 401
         if not dbi.destroySession(session_id):
-            return jsonify(error_message="Failed to destroy the session "
+            return jsonify(error_message="Could not destroy the session "
                            "(ID: {}).".format(session_id)), 500
         response = jsonify(redirect_url="/login")
         response.set_cookie(SESSION_ID_KEY, "", expires=0,
@@ -269,3 +274,35 @@ class RegisterResource(Resource):
                   "Could not register an user. The user is invalid. "
                   "{}".format(user_validation_error))
         dbi.getDatabase().set(user.id, user.toData())
+
+
+@user_namespace.route("/mailbox_token")
+class MailboxTokenResource(Resource):
+
+    @cross_origin(supports_credentials=True)
+    @api.doc(responses={200: "OK",
+                        400: "Bad Request, {error_message: string}",
+                        401: "Unauthorized, {error_message: string}",
+                        403: "Forbidden, {error_message: string}"})
+    def post(self):
+        """ Creates a mailbox token. """
+        session_id = request.cookies.get(SESSION_ID_KEY)
+        if not session_id:
+            return jsonify(error_message="The session ID must not "
+                           "be empty."), 401
+        validation_result = dbi.validateSession(session_id)
+        if not validation_result:
+            return jsonify(error_message="The session is invalid."), 401
+        login = validation_result[0]
+        if not dbi.isUserCourier(login):
+            return jsonify(error_message="The user is not a courier (login: "
+                           "{}).".format(login)), 403
+        mailbox_code = request.form.get("mailbox_code")
+        if not mailbox_code:
+            return jsonify(error_message="The mailbox code must not "
+                           "be empty."), 400
+        if not dbi.doesMailboxExist(mailbox_code):
+            return jsonify(error_message="The mailbox does not exist (code: "
+                           "{}).".format(mailbox_code)), 400
+        mailbox_token, _ = dbi.createMailboxToken(login, mailbox_code)
+        return jsonify(mailbox_token=mailbox_token), 200

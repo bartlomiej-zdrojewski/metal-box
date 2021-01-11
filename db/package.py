@@ -112,9 +112,6 @@ class Package:
             return "The status is invalid: {}.".format(self.status)
         return None
 
-    def getStatus(self):
-        return self.status
-
     def setStatus(self, status):
         if self.status not in PACKAGE_STATUS_LIST:
             return False

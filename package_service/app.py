@@ -1,20 +1,27 @@
 import math
 import os
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, abort
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS, cross_origin
 from flask_restplus import Api, Resource, fields
+from flask_socketio import SocketIO, join_room, leave_room, emit
 from db.dbi import *
 
 app = Flask(__name__, static_url_path="")
 app.config["JWT_SECRET_KEY"] = os.environ.get(JWT_SECRET_KEY)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = SESSION_EXPIRATION_TIME
 jwt = JWTManager(app)
 api = Api(app)
+socket_io = SocketIO(app, cors_allowed_origins=[
+    MAIN_SERVICE_ORIGIN,
+    COURIER_SERVICE_ORIGIN,
+    MAILBOX_SERVICE_ORIGIN])
 dbi = DatabaseInterface()
 
 CORS(app, origins=[
     MAIN_SERVICE_ORIGIN,
-    COURIER_SERVICE_ORIGIN],
+    COURIER_SERVICE_ORIGIN,
+    MAILBOX_SERVICE_ORIGIN],
     allow_headers=["Authorization"])
 
 package_namespace = api.namespace(
@@ -22,11 +29,23 @@ package_namespace = api.namespace(
     path="/api/package",
     description="Package Service API")
 
+mailbox_namespace = api.namespace(
+    "Mailbox",
+    path="/api/mailbox",
+    description="Mailbox Service API")
+
+# TODO socket_io.run(app) ?
+
+
+#
+# PACKAGE NAMESPACE
+#
+
 
 @package_namespace.route("")
 class PackageListResource(Resource):
 
-    create_package_form_model = api.model("Create Package Form Model", {
+    create_package_form_model = api.model("Create a Package Form Model", {
         "sender_name": fields.String(
             required=True, description="A sender's name."),
         "sender_surname": fields.String(
@@ -59,11 +78,11 @@ class PackageListResource(Resource):
             required=True, description="A receiver's street name (a part of "
             "the address)."),
         "receiver_building_number": fields.String(
-            required=True, description="A receiver's building number (a part of "
-            "the address)."),
+            required=True, description="A receiver's building number (a part "
+            "of the address)."),
         "receiver_apartment_number": fields.String(
-            required=True, description="A receiver's apartment number (a part of "
-            "the address)."),
+            required=True, description="A receiver's apartment number (a part "
+            "of the address)."),
         "receiver_postal_code": fields.String(
             required=True, description="A receiver's postal code (a part of "
             "the address)."),
@@ -76,8 +95,7 @@ class PackageListResource(Resource):
         "receiver_phone_number": fields.String(
             required=True, description="A receiver's phone number."),
         "image": fields.String(
-            required=True, description="A package photo. A PNG or JPEG file.")
-    })
+            required=True, description="A package photo. A PNG or JPEG file.")})
 
     @jwt_required
     @cross_origin()
@@ -95,10 +113,6 @@ class PackageListResource(Resource):
     def get(self):
         """ Returns a list of packages. """
         login = get_jwt_identity()
-        if not dbi.doesUserExist(login):
-            abort(500,
-                  "Could not fetch the package list. The user does not exists "
-                  "(login: {}).".format(login))
         as_courier = False
         if request.args.get("as_courier", "false") == "true":
             if not dbi.isUserCourier(login):
@@ -151,17 +165,18 @@ class PackageListResource(Resource):
                     package.register_date)
                 package_register_date_text = package_register_date.strftime(
                     "%Y-%m-%d %H:%M:%S")
-                package_is_deletable = "false"
-                if package.status == PACKAGE_STATUS_NEW:
-                    package_is_deletable = "true"
                 package_list.append({
                     "serial_number": package.serial_number,
                     "register_date": package_register_date_text,
-                    "status": package.getStatusText(),
+                    "status": package.status,
+                    "status_text": package.getStatusText(),
                     "url": PACKAGE_SERVICE_API_URL + "/package/" +
-                    package.serial_number,
-                    "is_deletable": package_is_deletable
-                })
+                    package.serial_number})
+                if as_courier:
+                    package_is_deletable = "false"
+                    if package.status == PACKAGE_STATUS_NEW:
+                        package_is_deletable = "true"
+                    package_list[-1]["is_deletable"] = package_is_deletable
         return self.__generatePackageListPage(package_list, page_index,
                                               page_size, as_courier)
 
@@ -226,14 +241,12 @@ class PackageListResource(Resource):
                 "page_size": len(package_list),
                 "page_count": 1,
                 "package_list": package_list,
-                "package_count": len(package_list)
-            }
+                "package_count": len(package_list)}
 
     def __validatePackageRegisterRequest(self, request):
         sender = Person(
             request.form.get("sender_name"),
-            request.form.get("sender_surname")
-        )
+            request.form.get("sender_surname"))
         sender_validation_error = sender.validate(False)
         if sender_validation_error:
             return "The sender's personal data is invalid. " \
@@ -244,8 +257,7 @@ class PackageListResource(Resource):
             request.form.get("sender_apartment_number"),
             request.form.get("sender_postal_code"),
             request.form.get("sender_city"),
-            request.form.get("sender_country")
-        )
+            request.form.get("sender_country"))
         sender_address_validation_error = sender_address.validate()
         if sender_address_validation_error:
             return "The sender's address data is invalid. " \
@@ -357,8 +369,10 @@ class PackageListResource(Resource):
         dbi.getDatabase().set(package.id, package.toData())
         dbi.getDatabase().hset(PACKAGE_ID_TO_SENDER_ID_MAP, package.id,
                                dbi.getUserIdFromLogin(user_login))
+        on_package_update(package)
 
 
+@api.param("serial_number", "A package serial number.", required=True)
 @package_namespace.route("/<serial_number>")
 class PackageResource(Resource):
 
@@ -432,7 +446,7 @@ class PackageResource(Resource):
         if not dbi.doesPackageExist(serial_number):
             abort(500,
                   "Could not get the package document. The package does not "
-                  "exist (serial_number: {}).".format(serial_number))
+                  "exist (package_serial_number: {}).".format(serial_number))
         file_path = ""
         package = dbi.getPackage(serial_number)
         if package.document_file_path:
@@ -448,39 +462,39 @@ class PackageResource(Resource):
         if not dbi.doesUserExist(courier_login):
             abort(500,
                   "Could not receive the package from the sender. The user "
-                  "does not exists (login: {}).".format(courier_login))
+                  "does not exists (user_login: {}).".format(courier_login))
         if not dbi.isUserCourier(courier_login):
             abort(500,
                   "Could not receive the package from the sender. The user "
-                  "is not a courier (login: {}).".format(courier_login))
+                  "is not a courier (user_login: {}).".format(courier_login))
         if not dbi.doesPackageExist(package_serial_number):
             abort(500,
                   "Could not receive the package from the sender. The package "
-                  "does not exist (serial_number: {}).".format(
+                  "does not exist (package_serial_number: {}).".format(
                       package_serial_number))
         courier_id = dbi.getUserIdFromLogin(courier_login)
-        package_id = dbi.getPackageIdFromSerialNumber(package_serial_number)
         package = dbi.getPackage(package_serial_number)
-        package_status = package.getStatus()
+        package_status = package.status
         if package_status != PACKAGE_STATUS_NEW:
             abort(500,
                   "Could not receive the package from sender. The package "
-                  "is not new (serial_number: {}, status: {}).".format(
+                  "is not new (package_serial_number: {}, status: {}).".format(
                       package_serial_number, package_status))
-        if dbi.getDatabase().hexists(PACKAGE_ID_TO_COURIER_ID_MAP, package_id):
+        if dbi.getDatabase().hexists(PACKAGE_ID_TO_COURIER_ID_MAP, package.id):
             courier_id = dbi.getDatabase().hget(
                 PACKAGE_ID_TO_COURIER_ID_MAP,
-                package_id)
+                package.id)
             abort(500,
                   "Could not receive the package from sender. The package "
                   "already has an assigned courier (courier_id: {}, "
                   "package_serial_number: {}).".format(
                       courier_id, package_serial_number))
         package.setStatus(PACKAGE_STATUS_RECEIVED_FROM_SENDER)
-        dbi.getDatabase().set(package_id, package.toData())
+        dbi.getDatabase().set(package.id, package.toData())
         dbi.getDatabase().hset(
             PACKAGE_ID_TO_COURIER_ID_MAP,
-            package_id, courier_id)
+            package.id, courier_id)
+        on_package_update(package)
 
     def __deletePackage(self, serial_number):
         if not dbi.doesPackageExist(serial_number):
@@ -513,12 +527,12 @@ class PackageResource(Resource):
         if not dbi.doesUserExist(user_login):
             abort(500,
                   "Could not validate user's access to the package. The user "
-                  "does not exist (login: {}).".format(user_login))
+                  "does not exist (user_login: {}).".format(user_login))
         if not dbi.doesPackageExist(package_serial_number):
             abort(500,
                   "Could not validate user's access to the package. "
-                  "The package does not exist (serial_number: {}).".format(
-                      package_serial_number))
+                  "The package does not exist (package_serial_number: "
+                  "{}).".format(package_serial_number))
         user_id = dbi.getUserIdFromLogin(user_login)
         package_id = dbi.getPackageIdFromSerialNumber(package_serial_number)
         if dbi.isUserCourier(user_login):
@@ -544,3 +558,324 @@ class PackageResource(Resource):
         return user_id == dbi.getDatabase().hget(
             PACKAGE_ID_TO_SENDER_ID_MAP,
             package_id)
+
+
+#
+# MAILBOX NAMESPACE
+#
+
+
+@mailbox_namespace.route("")
+class MailboxListResource(Resource):
+
+    create_mailbox_form_model = \
+        api.model("Create a Mailbox Form Model", {
+            "code": fields.String(
+                required=True, description="A mailbox code."),
+            "description": fields.String(
+                required=True, description="A mailbox description.")})
+
+    @cross_origin()
+    @api.doc(responses={200: "OK"})
+    def get(self):
+        """ Returns a list of mailboxes. """
+        # TODO
+        mailboxes = dbi.getDatabase().keys("mailbox_*")
+        return jsonify(mailboxes), 200
+
+    @cross_origin()
+    @api.expect(create_mailbox_form_model)
+    @api.doc(responses={201: "Created",
+                        400: "Bad Request, {error_message: string}"})
+    def post(self):
+        """ Creates a new mailbox. """
+        request_error = self.__validateMailboxRegisterRequest(request)
+        if request_error:
+            return jsonify(error_message=request_error), 400
+        self.__registerMailboxFromRequest(request)
+        return "Created", 201
+
+    def __validateMailboxRegisterRequest(self, request):
+        code = request.form.get("code")
+        if not code:
+            return "The code must not be empty."
+        description = request.form.get("description")
+        if not description:
+            return "The description must not be empty."
+        return None
+
+    def __registerMailboxFromRequest(self, request):
+        code = request.form.get("code")
+        description = request.form.get("description")
+        mailbox_id = dbi.getMailboxIdFromCode(code)
+        mailbox = Mailbox(mailbox_id, code, description)
+        mailbox_validation_error = mailbox.validate()
+        if mailbox_validation_error:
+            abort(500,
+                  "Could not register the mailbox. The mailbox is invalid. "
+                  "{}".format(mailbox_validation_error))
+        dbi.getDatabase().set(mailbox.id, mailbox.toData())
+
+
+@api.param("code", "A mailbox code.", required=True)
+@mailbox_namespace.route("/<code>")
+class MailboxResource(Resource):
+
+    assign_package_to_mailbox_form_model = \
+        api.model("Assign Package to Mailbox Form Model", {
+            "package_serial_number": fields.String(
+                required=True, description="A package serial number.")})
+
+    assign_packages_to_courier_form_model = \
+        api.model("Assign Packages to Courier Form Model", {
+            "mailbox_token": fields.String(
+                required=True, description="A mailbox token."),
+            "package_list":
+                fields.List(fields.String,
+                            required=True,
+                            description="A list of package serial numbers.")})
+
+    @cross_origin()
+    @api.param("token", "A mailbox token.", required=True)
+    @api.doc(responses={200: "OK",
+                        400: "Bad Request, {error_message: string}",
+                        404: "Not Found, {error_message: string}"})
+    def get(self, code):
+        """ Returns a list of packages in the mailbox. """
+        if not dbi.doesMailboxExist(code):
+            return jsonify(error_message="The mailbox does not exist "
+                           "(mailbox_code: {}).".format(code)), 404
+        token = request.args.get("token")
+        if not token:
+            return jsonify(error_message="The token must not be empty."), 400
+        if not dbi.validateMailboxToken(code, token):
+            return jsonify(error_message="The token is invalid."), 400
+        return self.__fetchMailboxPackageList(code), 200
+
+    @cross_origin()
+    @api.expect(assign_package_to_mailbox_form_model)
+    @api.doc(responses={200: "OK",
+                        400: "Bad Request, {error_message: string}",
+                        404: "Not Found, {error_message: string}"})
+    def post(self, code):
+        """ Assigns a package to the mailbox. """
+        if not dbi.doesMailboxExist(code):
+            return jsonify(error_message="The mailbox does not exist "
+                           "(code: {}).".format(code)), 404
+        package_serial_number = request.form.get("package_serial_number")
+        if not package_serial_number:
+            return jsonify(error_message="The package serial number must not "
+                           "be empty."), 400
+        if not dbi.doesPackageExist(package_serial_number):
+            return jsonify(error_message="The package does not exist "
+                           "(serial_number: {}).".format(
+                               package_serial_number)), 400
+        package_status = dbi.getPackageStatus(package_serial_number)
+        if package_status != PACKAGE_STATUS_NEW:
+            return jsonify(error_message="The package is not new "
+                           "(serial_number: {}, status: {}).".format(
+                               package_serial_number, package_status)), 400
+        self.__assignPackageToMailbox(code, package_serial_number)
+        return "OK", 200
+
+    @cross_origin()
+    @api.expect(assign_packages_to_courier_form_model)
+    @api.doc(responses={200: "OK",
+                        400: "Bad Request, {error_message: string}",
+                        404: "Not Found, {error_message: string}"})
+    def delete(self, code):
+        """ Assigns a package list to the courier. """
+        if not dbi.doesMailboxExist(code):
+            return jsonify(error_message="The mailbox does not exist "
+                           "(code: {}).".format(code)), 404
+        token = request.form.get("mailbox_token")
+        if not token:
+            return jsonify(error_message="The mailbox token must not be "
+                           "empty."), 400
+        validation_result = dbi.validateMailboxToken(code, token)
+        if not validation_result:
+            return jsonify(error_message="The mailbox token is invalid."), 400
+        courier_login = validation_result[0]
+        package_list_raw = request.form.get("package_list")
+        if not package_list_raw:
+            return jsonify(error_message="The package list must not be "
+                           "empty."), 400
+        package_list = package_list_raw.split(",")
+        package_list[:] = [package.strip("[]").strip()
+                           for package in package_list]
+        if not package_list:
+            return jsonify(error_message="The package list must not be "
+                           "empty (an example list: \"[1a,2b,3c]\")."), 400
+        for package_serial_number in package_list:
+            if not dbi.doesPackageExist(package_serial_number):
+                return jsonify(error_message="One of the packages does not "
+                               "exist (serial number: {}).".format(
+                                   package_serial_number)), 400
+        self.__assignPackagesToCourier(code, courier_login, package_list)
+        return "OK", 200
+
+    def __fetchMailboxPackageList(self, mailbox_code):
+        package_list = []
+        mailbox_id = dbi.getMailboxIdFromCode(mailbox_code)
+        for package_id in dbi.getDatabase().hkeys(PACKAGE_ID_TO_MAILBOX_ID_MAP):
+            if mailbox_id == dbi.getDatabase().hget(
+                    PACKAGE_ID_TO_MAILBOX_ID_MAP, package_id):
+                if not dbi.getDatabase().exists(package_id):
+                    abort(500,
+                          "Could not fetch the mailbox package list. One of "
+                          "the packages does not exist (package_id: "
+                          "{}).".format(package_id))
+                package = Package.loadFromData(
+                    dbi.getDatabase().get(package_id))
+                package_register_date = dateutil.parser.parse(
+                    package.register_date)
+                package_register_date_text = package_register_date.strftime(
+                    "%Y-%m-%d %H:%M:%S")
+                package_list.append({
+                    "serial_number": package.serial_number,
+                    "register_date": package_register_date_text,
+                    "url": PACKAGE_SERVICE_API_URL + "/package/" +
+                    package.serial_number})
+        return {
+            "package_list": package_list,
+            "package_count": len(package_list)}
+
+    def __assignPackageToMailbox(self, mailbox_code, package_serial_number):
+        if not dbi.doesMailboxExist(mailbox_code):
+            abort(500,
+                  "Could not assign the package to mailbox. The mailbox "
+                  "does not exist (mailbox_code: {}).".format(
+                      mailbox_code))
+        if not dbi.doesPackageExist(package_serial_number):
+            abort(500,
+                  "Could not assign the package to mailbox. The package "
+                  "does not exist (package_serial_number: {}).".format(
+                      package_serial_number))
+        package = dbi.getPackage(package_serial_number)
+        package_status = package.status
+        if package_status != PACKAGE_STATUS_NEW:
+            abort(500,
+                  "Could not assign the package to mailbox. The package "
+                  "is not new (package_serial_number: {}, status: {}).".format(
+                      package_serial_number, package_status))
+        mailbox_id = dbi.getMailboxIdFromCode(mailbox_code)
+        if dbi.getDatabase().hexists(PACKAGE_ID_TO_MAILBOX_ID_MAP, package.id):
+            mailbox_id = dbi.getDatabase().hget(
+                PACKAGE_ID_TO_MAILBOX_ID_MAP,
+                package.id)
+            abort(500,
+                  "Could not assign the package to mailbox. The package "
+                  "already has an assigned mailbox (mailbox_id: {}, "
+                  "package_serial_number: {}).".format(
+                      mailbox_id, package_serial_number))
+        package.setStatus(PACKAGE_STATUS_IN_MAILBOX)
+        dbi.getDatabase().set(package.id, package.toData())
+        dbi.getDatabase().hset(PACKAGE_ID_TO_MAILBOX_ID_MAP, package.id,
+                               mailbox_id)
+        on_package_update(package)
+
+    def __assignPackagesToCourier(self, mailbox_code, courier_login,
+                                  package_list):
+        if not dbi.doesMailboxExist(mailbox_code):
+            abort(500,
+                  "Could not assign the packages to courier. The mailbox "
+                  "does not exist (mailbox_code: {}).".format(
+                      mailbox_code))
+        if not dbi.doesUserExist(courier_login):
+            abort(500,
+                  "Could not assign the packages to courier. The user "
+                  "does not exists (user_login: {}).".format(courier_login))
+        if not dbi.isUserCourier(courier_login):
+            abort(500,
+                  "Could not assign the packages to courier. The user "
+                  "is not a courier (user_login: {}).".format(courier_login))
+        courier_id = dbi.getUserIdFromLogin(courier_login)
+        for package_serial_number in package_list:
+            if not dbi.doesPackageExist(package_serial_number):
+                abort(500,
+                      "Could not assign the packages to courier. One of the "
+                      "packages does not exist (package_serial_number: "
+                      "{}).".format(package_serial_number))
+            package = dbi.getPackage(package_serial_number)
+            package_status = package.status
+            if package_status != PACKAGE_STATUS_IN_MAILBOX:
+                abort(500,
+                      "Could not assign the packages to courier. One of the "
+                      "packages is not in mailbox (package_serial_number: "
+                      "{}, status: {}).".format(
+                          package_serial_number, package_status))
+            package_id = dbi.getPackageIdFromSerialNumber(
+                package_serial_number)
+            if dbi.getDatabase().hexists(
+                    PACKAGE_ID_TO_COURIER_ID_MAP, package_id):
+                courier_id = dbi.getDatabase().hget(
+                    PACKAGE_ID_TO_COURIER_ID_MAP,
+                    package_id)
+                abort(500,
+                      "Could not assign the packages to courier. One of the "
+                      "packages already has an assigned courier (courier_id: "
+                      "{}, package_serial_number: {}).".format(
+                          courier_id, package_serial_number))
+        for package_serial_number in package_list:
+            package = dbi.getPackage(package_serial_number)
+            package.setStatus(PACKAGE_STATUS_RECEIVED_FROM_MAILBOX)
+            dbi.getDatabase().set(package.id, package.toData())
+            dbi.getDatabase().hset(PACKAGE_ID_TO_COURIER_ID_MAP, package.id,
+                                   courier_id)
+            dbi.getDatabase().hdel(PACKAGE_ID_TO_MAILBOX_ID_MAP, package.id)
+            on_package_update(package)
+
+
+#
+# SOCKET IO
+#
+
+
+@socket_io.on("connect")
+def on_connect():
+    emit("connect_response", {"success": True})
+
+
+@socket_io.on("disconnect")
+def on_disconnect():
+    pass
+
+
+@socket_io.on("subscribe")
+def on_join(data):
+    notifier_name = data[NOTIFIER_NAME_KEY]
+    if notifier_name not in NOTIFIER_NAME_LIST:
+        emit("join_response", {
+            "success": False,
+            "error_message": "Could not subscribe to the notifier. "
+                             "The notifier does not exist (name: {}).".format(
+                                 notifier_name)})
+        return
+    join_room(notifier_name)
+    emit("subscribe_response", {
+        "success": True,
+        NOTIFIER_NAME_KEY: notifier_name})
+
+
+@socket_io.on("unsubscribe")
+def on_leave(data):
+    notifier_name = data[NOTIFIER_NAME_KEY]
+    if notifier_name not in NOTIFIER_NAME_LIST:
+        emit("leave_response", {
+            "success": False,
+            "error_message": "Could not unsubscribe from the notifier. "
+                             "The notifier does not exist (name: {}).".format(
+                                 notifier_name)})
+        return
+    leave_room(notifier_name)
+    emit("unsubscribe_response", {
+        "success": True,
+        NOTIFIER_NAME_KEY: notifier_name})
+
+
+def on_package_update(package):
+    socket_io.emit("package_update", {
+        "serial_number": package.serial_number,
+        "status": package.status,
+        "status_text": package.getStatusText()
+    }, namespace="/", room=PACKAGE_NOTIFIER)

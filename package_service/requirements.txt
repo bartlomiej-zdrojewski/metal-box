@@ -3,4 +3,6 @@ flask
 flask-jwt-extended
 flask-cors
 flask-restplus
+flask-socketio
+eventlet
 Werkzeug==0.16.1

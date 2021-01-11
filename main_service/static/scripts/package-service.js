@@ -80,13 +80,32 @@ const PackageList = {
     },
     onPageChangeCallback: function (element, page) { },
     getPageUrl: function (api_url, page_index, page_size, as_courier) {
-        pageUrl = api_url + "/package";
-        if (page_index)
-            pageUrl += "?page_index=" + page_index;
-        if (page_size)
-            pageUrl += "?page_size=" + page_size;
-        if (as_courier)
-            pageUrl += "?as_courier=" + as_courier;
+        let pageUrl = api_url + "/package";
+        let isFirstParameter = true;
+        if (typeof page_index !== 'undefined') {
+            if (isFirstParameter) {
+                pageUrl += "?page_index=" + page_index;
+                isFirstParameter = false;
+            } else {
+                pageUrl += "&page_index=" + page_index;
+            }
+        }            
+        if (typeof page_size !== 'undefined') {
+            if (isFirstParameter) {
+                pageUrl += "?page_size=" + page_size;
+                isFirstParameter = false;
+            } else {
+                pageUrl += "&page_size=" + page_size;
+            }
+        }
+        if (typeof as_courier !== 'undefined') {
+            if (isFirstParameter) {
+                pageUrl += "?as_courier=" + as_courier;
+                isFirstParameter = false;
+            } else {
+                pageUrl += "&as_courier=" + as_courier;
+            }
+        }
         return pageUrl;
     },
     fetchPage: function (page_url) {
@@ -120,5 +139,46 @@ const PackageList = {
             },
             redirect: "follow"
         };
+    }
+};
+
+const PackageNotifier = {
+    onPackageUpdateCallback: function (package) { },
+    getSocket: function (socket_url) {
+        socket = io.connect(socket_url);
+        socket.on("connect_response", function (response) {
+            if (response.success === true) {
+                console.log("Connected to the socket: " + socket_url + ".");
+            } else {
+                console.log("Could not connect to the socket: " +
+                    socket_url + ".");
+            }
+        });
+        socket.on("subscribe_response", function (response) {
+            if (response.success === true) {
+                console.log("Subscribed to the notifier: " +
+                    response.notifier_name + ".");
+            } else {
+                console.log(response.error_message);
+            }
+        });
+        socket.on("unsubscribe_response", function (response) {
+            if (response.success === true) {
+                console.log("Unsubscribed from the notifier: " +
+                    response.notifier_name + ".");
+            } else {
+                console.log(response.error_message);
+            }
+        });
+        return socket;
+    },
+    subscribe: function (socket) {
+        socket.on("package_update",
+            (response) => this.onPackageUpdateCallback(response));
+        socket.emit("subscribe", { notifier_name: "package_notifier" });
+    },
+    unsibscribe: function (socket) {
+        socket.on("package_update", function (response) { });
+        socket.emit("unsubscribe", { notifier_name: "package_notifier" });
     }
 };

@@ -54,14 +54,14 @@ def before_request():
             request.environ["secure_session_id"] = session_id
             request.environ["secure_session_valid"] = False
             abort(401)
-        request.environ["secure_user_login"] = validation_result[1]
+        request.environ["secure_user_login"] = validation_result[0]
         if not dbi.isUserCourier(request.environ["secure_user_login"]):
             request.environ["secure_session_id"] = session_id
             request.environ["secure_session_valid"] = False
             abort(403)
         request.environ["secure_session_id"] = session_id
         request.environ["secure_session_valid"] = True
-        request.environ["secure_session_expiration_date"] = validation_result[0]
+        request.environ["secure_session_expiration_date"] = validation_result[1]
 
 
 @app.after_request

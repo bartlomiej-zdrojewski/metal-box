@@ -4,12 +4,43 @@ document.addEventListener('DOMContentLoaded', function (event) {
     const PACKAGE_SERIAL_NUMBER_ATTRIBUTE_NAME = "package-serial-number";
     const PAGE_URL_ATTRIBUTE_NAME = "page-url";
     const API_URL = "https://localhost:8084/api";
-    const FETCH_AS_COURIER = false;    
+    const SOCKET_URL = "https://localhost:8084/"
+    const FETCH_AS_COURIER = false;
 
     PackageList.onPageChangeCallback = function (element, page) {
         const table = getPackageListTableParent(element);
         if (table) {
             updatePackageListTable(table, page);
+        }
+    }
+
+    PackageNotifier.onPackageUpdateCallback = function (package) {
+        const tables = getPackageListTables();
+        for (let i = 0; i < tables.length; i++) {
+            const table = tables[i];
+            const page = JSON.parse(table.getAttribute("page"));
+            if (package.status === "package_status_new") {
+                const pageUrl = PackageList.getPageUrl(
+                    API_URL, page.page_index, page.page_size, FETCH_AS_COURIER);
+                PackageList.fetchPage(pageUrl)
+                    .then(response => {
+                        updatePackageListTable(table, response);
+                    })
+                    .catch(error => {
+                        console.log("Could not fetch the package list. " +
+                            error);
+                    });
+            } else {
+                for (let j = 0; j < page.package_list.length; j++) {
+                    if (page.package_list[j].serial_number ===
+                        package.serial_number) {
+                        page.package_list[j].status = package.status;
+                        page.package_list[j].status_text = package.status_text;
+                        page.package_list[j].is_deletable = "false";
+                    }
+                }
+                updatePackageListTable(table, page);
+            }
         }
     }
 
@@ -29,6 +60,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
             .catch(error => {
                 console.log("Could not fetch the package list. " + error);
             });
+        const socket = PackageNotifier.getSocket(SOCKET_URL);
+        PackageNotifier.subscribe(socket);
     }
 
     function getPackageListTables() {
@@ -49,6 +82,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
     }
 
     function updatePackageListTable(table, page) {
+        // TODO move from attribute to memory
+        table.setAttribute("page", JSON.stringify(page));
         const tbody = table.getElementsByTagName("tbody")[0];
         const tfoot = table.getElementsByTagName("tfoot")[0];
         if (tbody) {
@@ -59,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                 html += "<tr>";
                 html += "<td>" + package.serial_number + "</td>";
                 html += "<td>" + package.register_date + "</td>";
-                html += "<td>" + package.status + "</td>";
+                html += "<td>" + package.status_text + "</td>";
                 html += "<td>";
                 html += "<a href=\"#\" ";
                 html += PACKAGE_URL_ATTRIBUTE_NAME;
