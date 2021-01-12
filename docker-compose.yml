@@ -49,6 +49,7 @@ services:
     volumes:
       - ./mailbox_service:/mailbox_service
       - ./db:/mailbox_service/db
+      - ./js:/mailbox_service/static/scripts/common
     env_file:
       - variables.env
   authorization_service:

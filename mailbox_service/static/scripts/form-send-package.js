@@ -1,21 +1,20 @@
 document.addEventListener('DOMContentLoaded', function (event) {
-    const FORM_ID = "form_generate_mailbox_token";
+    const FORM_ID = "form_send_package";
     const INPUT_MAILBOX_CODE_ID = "mailbox_code";
+    const INPUT_PACKAGE_SERIAL_NUMBER_ID = "package_serial_number";
     const SUBMIT_BUTTON_ID = "submit_button";
-
-    const MAILBOX_SERVICE_URL = "https://localhost:8082";
 
     init();
 
     function init() {
         const form = document.getElementById(FORM_ID);
-        const submit_button = document.getElementById(SUBMIT_BUTTON_ID);
+        const submitButton = document.getElementById(SUBMIT_BUTTON_ID);
         form.addEventListener("submit", e => onSubmit(e));
-        submit_button.disabled = true;
+        submitButton.disabled = true;
         MailboxList.fetchMailboxList()
             .then(response => {
-                updateMailboxCodeInput(response.mailbox_list)
-                submit_button.disabled = false;
+                updateMailboxCodeInput(response.mailbox_list);
+                submitButton.disabled = false;
             }).catch(error => {
                 console.log("Could not fetch the mailbox list. " + error);
             });
@@ -24,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     function updateMailboxCodeInput(mailbox_list) {
         const mailboxCodeInput = document.getElementById(INPUT_MAILBOX_CODE_ID);
         if (mailboxCodeInput) {
-            let html = "";
+            html = "";
             for (let i = 0; i < mailbox_list.length; i++) {
                 const mailbox = mailbox_list[i];
                 html += "<option value=\"" + mailbox.code + "\">";
@@ -54,22 +53,18 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     function onSubmit(event) {
         event.preventDefault();
-        mailbox_code = document.getElementById(INPUT_MAILBOX_CODE_ID).value;
-        Authorization.fetchMailboxToken(mailbox_code)
-            .then(response => {
-                text = "Wygenerowano żeton paczkomatu: ";
-                text += "<a href=\"" + MAILBOX_SERVICE_URL + "/receive?code=";
-                text += mailbox_code;
-                text += "&token=";
-                text += response.mailbox_token;
-                text += "\">";
-                text += response.mailbox_token;
-                text += "</a>";
-                updateStatus(text)
+        const mailbox_code =
+            document.getElementById(INPUT_MAILBOX_CODE_ID).value;
+        const package_serial_number =
+            document.getElementById(INPUT_PACKAGE_SERIAL_NUMBER_ID).value;
+        Mailbox.sendPackage(mailbox_code, package_serial_number)
+            .then(_ => {
+                updateStatus("Paczka została nadana pomyślnie.")
             }).catch(error => {
-                updateStatus("Podczas generowania żetonu paczkomatu " +
-                    "wystąpił błąd.", true)
-                console.log("Could not fetch the mailbox token. " + error);
+                updateStatus("Podczas nadawania paczki wystąpił błąd. " +
+                    "Upewnij się, że numer seryjny paczki jest poprawny.",
+                    true);
+                console.log("Could not send the package. " + error);
             });
     }
 });

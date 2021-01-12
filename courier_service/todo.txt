@@ -1,1 +1,1 @@
-7. Aplikacja dla kuriera ma być aplikacją progresywną z możliwością instalacji na urządzeniu mobilnym. Aplikacja dla kuriera ma się dobrze wyświetlać na trzech typowych ekranach (monitor komputera, tablet, smartphone).
+7a. Aplikacja dla kuriera ma być aplikacją progresywną z możliwością instalacji na urządzeniu mobilnym.

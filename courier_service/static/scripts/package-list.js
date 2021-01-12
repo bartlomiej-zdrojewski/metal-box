@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                 html += "<tr>";
                 html += "<td>" + package.serial_number + "</td>";
                 html += "<td>" + package.register_date + "</td>";
-                html += "<td>" + package.status + "</td>";
+                html += "<td>" + package.status_text + "</td>";
                 html += "<td>";
                 html += "<a href=\"#\" ";
                 html += PACKAGE_URL_ATTRIBUTE_NAME;

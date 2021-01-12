@@ -8,12 +8,12 @@
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="/styles/main.css">
     <link rel="icon" type="image/svg" href="/images/logo.svg">
-    <title>MetalBox | Kurier</title>
+    <title>MetalBox | Paczkomat</title>
 </head>
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <a class="navbar-brand" href="/">MetalBox | Kurier</a>
+        <a class="navbar-brand" href="/">MetalBox | Paczkomat</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText"
             aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -21,37 +21,34 @@
         <div class="collapse navbar-collapse" id="navbarText">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="/secure/package/list">Lista paczek</a>
+                    <a class="nav-link active" href="/send">Nadaj paczkę</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/secure/package/receive">Odbierz paczkę</a>
-                </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/secure/mailbox/token">Wygeneruj żeton</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/secure/logout">Wyloguj się</a>
+                    <a class="nav-link" href="/receive">Odbierz paczki (kurier)</a>
                 </li>
             </ul>
         </div>
     </nav>
     <div class="container mt-3 mb-3">
-        <h3 class="mb-3">Generowanie żetonu paczkomatu</h3>
-        <form id="form_generate_mailbox_token">
+        <h3 class="mb-3">Nadawanie paczki</h3>
+        <form id="form_send_package">
             <div class="form-group">
                 <label for="mailbox_code">Paczkomat</label>
                 <select id="mailbox_code" class="form-control">
                 </select>
             </div>
+            <div class="form-group">
+                <label for="package_serial_number">Numer seryjny paczki</label>
+                <input id="package_serial_number" class="form-control" type="text" />
+            </div>
             <div class="form-group row justify-content-center">
-                <button id="submit_button" class="btn btn-primary" type="submit">Wygeneruj żeton paczkomatu</button>
+                <button id="submit_button" class="btn btn-primary" type="submit">Nadaj paczkę</button>
             </div>
         </form>
     </div>
 
-    <script src="/scripts/common/authorization-service.js"></script>
     <script src="/scripts/common/mailbox-service.js"></script>
-    <script src="/scripts/form-generate-mailbox-token.js"></script>
+    <script src="/scripts/form-send-package.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
         crossorigin="anonymous"></script>

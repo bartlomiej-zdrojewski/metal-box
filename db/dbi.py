@@ -32,8 +32,22 @@ class DatabaseInterface:
                                        hmac_hash_module=SHA256)).decode()
 
     def __generateExampleData(self):
-        # TODO generate default mailboxes
-        pass
+        if not self.doesMailboxExist("waw1"):
+            mailbox_code = "waw1"
+            mailbox_description = "Paczkomat #1 w Warszawie"
+            mailbox_id = self.getMailboxIdFromCode(mailbox_code)
+            mailbox = Mailbox(mailbox_id, mailbox_code, mailbox_description)
+            if not mailbox.validate():
+                self.db.set(mailbox.id, mailbox.toData())
+                self.db.rpush(MAILBOX_CODE_LIST, mailbox.code)
+        if not self.doesMailboxExist("waw2"):
+            mailbox_code = "waw2"
+            mailbox_description = "Paczkomat #2 w Warszawie"
+            mailbox_id = self.getMailboxIdFromCode(mailbox_code)
+            mailbox = Mailbox(mailbox_id, mailbox_code, mailbox_description)
+            if not mailbox.validate():
+                self.db.set(mailbox.id, mailbox.toData())
+                self.db.rpush(MAILBOX_CODE_LIST, mailbox.code)
 
     #
     # USER SECTION
