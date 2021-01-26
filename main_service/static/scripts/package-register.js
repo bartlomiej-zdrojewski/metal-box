@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         CREATED: 201,
         BAD_REQUEST: 400
     };
-    const API_URL = "https://localhost:8081/api";
+    const API_URL = "https://localhost:8084/api";
 
     const postalCodePattern = new RegExp(/^\d{2}-\d{3}$/);
     const phoneNumberPattern = new RegExp(/^\d{9}$/);

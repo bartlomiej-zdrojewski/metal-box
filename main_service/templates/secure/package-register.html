@@ -42,6 +42,10 @@
                     <input id="sender_street" type="text" name="sender_street" value="{{user.address.street if user.address.street != None}}" />
                 </p>
                 <p>
+                    <label for="sender_building_number">Numer budynku</label>
+                    <input id="sender_building_number" type="text" name="sender_building_number" value="{{user.address.building_number if user.address.building_number != None}}" />
+                </p>
+                <p>
                     <label for="sender_apartment_number">Numer mieszkania</label>
                     <input id="sender_apartment_number" type="text" name="sender_apartment_number" value="{{user.address.apartment_number if user.address.apartment_number != None}}" />
                 </p>
@@ -77,6 +81,10 @@
                 <p>
                     <label for="receiver_street">Ulica</label>
                     <input id="receiver_street" type="text" name="receiver_street" />
+                </p>
+                <p>
+                    <label for="receiver_building_number">Numer budynku</label>
+                    <input id="receiver_building_number" type="text" name="receiver_building_number" />
                 </p>
                 <p>
                     <label for="receiver_apartment_number">Numer mieszkania</label>

@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         isReceivingPackage = true;
         setButtonReceivePackageEnabled(false);
         setSpan(BUTTON_RECEIVE_PACKAGE_ID, "Odbieranie paczki...");
-        let url = API_URL + "/package/" + getInputValue(INPUT_SERIAL_NUMBER_ID) + "/receive";
+        let url = API_URL + "/package/" + getInputValue(INPUT_SERIAL_NUMBER_ID);
         let params = {
             method: PUT,
             headers: {
